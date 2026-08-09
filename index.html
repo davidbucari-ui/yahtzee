@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bloc de score — Yahtzee &amp; variantes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=DM+Mono:wght@400;500&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --encre:#131A2E;
+  --papier:#E9E7DE;
+  --papier-clair:#F5F3EC;
+  --feutre:#1F6F5C;
+  --feutre-fonce:#164e41;
+  --moutarde:#E8B33C;
+  --biffe:#C2452D;
+  --trait:rgba(19,26,46,.14);
+  --display:'Bricolage Grotesque',system-ui,sans-serif;
+  --corps:'Public Sans',system-ui,sans-serif;
+  --chiffres:'DM Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--papier);
+  color:var(--encre);
+  font-family:var(--corps);
+  font-size:16px;line-height:1.45;
+  min-height:100vh;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+button{font-family:inherit;font-size:inherit;color:inherit;border:0;background:none;cursor:pointer}
+:focus-visible{outline:3px solid var(--moutarde);outline-offset:2px}
+.cache{display:none!important}
+
+/* ---------- en-tête ---------- */
+header.appbar{
+  background:var(--feutre);color:var(--papier-clair);
+  padding:calc(14px + env(safe-area-inset-top)) 18px 14px;
+  display:flex;align-items:center;gap:12px;
+  position:sticky;top:0;z-index:30;
+}
+.appbar h1{
+  font-family:var(--display);font-weight:800;
+  font-size:19px;letter-spacing:-.02em;margin:0;flex:1;
+}
+.appbar .sous{display:block;font-family:var(--corps);font-weight:400;font-size:12px;opacity:.75;letter-spacing:0}
+.btn-bar{
+  border:1px solid rgba(245,243,236,.35);border-radius:999px;
+  padding:7px 14px;font-size:13px;font-weight:600;white-space:nowrap;
+}
+.btn-bar:hover{background:rgba(245,243,236,.12)}
+
+/* ---------- pips (signature) ---------- */
+.pips{
+  display:grid;grid-template-columns:repeat(3,4px);grid-template-rows:repeat(3,4px);
+  gap:2px;width:16px;flex:0 0 16px;
+}
+.pips i{border-radius:50%;background:var(--encre);opacity:.85}
+.pips i.vide{background:none}
+
+/* ---------- écrans ---------- */
+main{max-width:1100px;margin:0 auto;padding:20px 16px 120px}
+.ecran{display:none}
+.ecran.actif{display:block}
+
+.titre-section{
+  font-family:var(--display);font-weight:800;font-size:28px;
+  letter-spacing:-.03em;margin:4px 0 6px;
+}
+.chapo{margin:0 0 22px;max-width:52ch;opacity:.7;font-size:15px}
+
+.carte{
+  background:var(--papier-clair);border:1px solid var(--trait);
+  border-radius:14px;padding:16px;margin-bottom:14px;
+}
+.etiquette{
+  font-family:var(--chiffres);font-size:11px;text-transform:uppercase;
+  letter-spacing:.14em;opacity:.55;margin-bottom:10px;
+}
+
+/* variantes */
+.variante{
+  display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;
+  padding:14px;border:1.5px solid var(--trait);border-radius:12px;
+  background:var(--papier-clair);margin-bottom:10px;transition:.15s;
+}
+.variante:hover{border-color:var(--feutre)}
+.variante[aria-pressed="true"]{border-color:var(--feutre);background:#fff;box-shadow:inset 0 0 0 1px var(--feutre)}
+.variante .de{
+  width:38px;height:38px;flex:0 0 38px;border-radius:9px;background:var(--encre);
+  display:grid;place-items:center;
+}
+.variante .de .pips i{background:var(--papier-clair)}
+.variante b{display:block;font-family:var(--display);font-weight:600;font-size:16px}
+.variante span{font-size:13px;opacity:.65;display:block}
+
+/* joueurs */
+.ligne-joueur{display:flex;gap:8px;margin-bottom:8px;align-items:center}
+.ligne-joueur .rang{
+  font-family:var(--chiffres);font-size:12px;opacity:.45;width:20px;text-align:right;
+}
+input[type=text]{
+  flex:1;font-family:var(--corps);font-size:16px;padding:11px 13px;
+  border:1.5px solid var(--trait);border-radius:10px;background:#fff;color:var(--encre);
+}
+input[type=text]:focus{border-color:var(--feutre);outline:none}
+.retirer{
+  width:38px;height:38px;border-radius:9px;color:var(--biffe);font-size:20px;
+  display:grid;place-items:center;
+}
+.retirer:hover{background:rgba(194,69,45,.1)}
+
+.lien{
+  font-size:14px;font-weight:600;color:var(--feutre);
+  border-bottom:1.5px solid currentColor;padding-bottom:1px;
+}
+
+/* options */
+.option{display:flex;align-items:center;gap:12px;padding:8px 0;font-size:14px}
+.option input{width:20px;height:20px;accent-color:var(--feutre)}
+.option small{display:block;opacity:.6;font-size:12.5px}
+
+/* boutons principaux */
+.principal{
+  position:fixed;left:0;right:0;bottom:0;z-index:25;
+  padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+  background:linear-gradient(to top,var(--papier) 68%,rgba(233,231,222,0));
+}
+.principal .inner{max-width:1100px;margin:0 auto;display:flex;gap:10px}
+.btn{
+  flex:1;background:var(--encre);color:var(--papier-clair);
+  padding:15px;border-radius:12px;font-weight:600;font-size:16px;text-align:center;
+  font-family:var(--display);letter-spacing:-.01em;
+}
+.btn:hover{background:#1e2843}
+.btn.vert{background:var(--feutre)}
+.btn.vert:hover{background:var(--feutre-fonce)}
+.btn.fantome{background:none;color:var(--encre);border:1.5px solid var(--trait);flex:0 0 auto;padding:15px 18px}
+
+/* ---------- feuille de score ---------- */
+.feuille-enveloppe{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--trait);border-radius:14px;background:var(--papier-clair)}
+table.feuille{border-collapse:collapse;width:100%;min-width:min-content}
+table.feuille th,table.feuille td{border-bottom:1px solid var(--trait);padding:0}
+.col-cat{
+  position:sticky;left:0;z-index:5;background:var(--papier-clair);
+  min-width:170px;max-width:170px;
+  border-right:1px solid var(--trait);
+}
+thead .col-cat{z-index:12}
+thead th{
+  position:sticky;top:0;background:var(--papier-clair);z-index:10;
+  border-bottom:1.5px solid var(--encre);
+}
+.tete-joueur{padding:10px 8px;min-width:88px;text-align:center}
+.tete-joueur .nom{
+  font-family:var(--display);font-weight:800;font-size:17px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:96px;margin:0 auto;
+}
+.tete-joueur .cumul{font-family:var(--chiffres);font-size:19px;font-weight:500}
+.tete-joueur.leader .nom::after{content:" ★";color:var(--moutarde)}
+.tete-joueur.leader{background:#fff;box-shadow:inset 0 -3px 0 var(--moutarde)}
+
+.cat{display:flex;align-items:center;gap:9px;padding:0 11px;height:50px;font-size:16px;font-weight:600}
+.cat .val{font-family:var(--chiffres);font-size:12.5px;font-weight:400;opacity:.5;margin-left:auto}
+tr.entete-bloc td{
+  background:var(--encre);color:var(--papier-clair);
+  font-family:var(--chiffres);font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+  padding:7px 11px;
+}
+tr.entete-bloc .col-cat{background:var(--encre);color:var(--papier-clair)}
+
+.case{
+  width:100%;height:50px;font-family:var(--chiffres);font-size:21px;font-weight:500;
+  display:grid;place-items:center;position:relative;
+}
+.case:hover{background:rgba(31,111,92,.09)}
+.case.vide::after{content:"·";opacity:.25;font-size:20px}
+.case.zero{color:var(--biffe)}
+.case.zero::before{
+  content:"";position:absolute;left:22%;right:22%;top:50%;
+  height:2px;background:var(--biffe);transform:rotate(-14deg);border-radius:2px;
+}
+tr.total td,tr.total .col-cat{background:rgba(19,26,46,.05)}
+tr.total .cat{font-weight:600}
+tr.total .lecture{font-family:var(--chiffres);font-weight:500;text-align:center;font-size:19px}
+tr.grand-total td{background:var(--encre);color:var(--papier-clair)}
+tr.grand-total .col-cat{background:var(--encre);color:var(--papier-clair)}
+tr.grand-total .cat{font-family:var(--display);font-weight:800;font-size:18px}
+tr.grand-total .lecture{font-size:24px;font-weight:500;font-family:var(--chiffres);text-align:center}
+tr.total-haut td,tr.total-haut .col-cat{background:rgba(31,111,92,.13)}
+tr.total-haut .cat{font-family:var(--display);font-weight:800;font-size:17px}
+tr.total-haut .lecture{font-size:21px;color:var(--feutre-fonce)}
+.bonus-atteint{color:var(--feutre);font-weight:600}
+
+/* ---------- pavé de saisie ---------- */
+.voile{
+  position:fixed;inset:0;background:rgba(19,26,46,.55);z-index:50;
+  display:flex;align-items:flex-end;justify-content:center;
+}
+.voile[hidden]{display:none}
+.pave{
+  background:var(--papier-clair);width:100%;max-width:460px;
+  border-radius:18px 18px 0 0;padding:18px 18px calc(20px + env(safe-area-inset-bottom));
+  animation:monte .22s cubic-bezier(.2,.8,.3,1);
+}
+@keyframes monte{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@media (prefers-reduced-motion:reduce){.pave{animation:none}}
+.pave h2{font-family:var(--display);font-weight:800;font-size:20px;margin:0;letter-spacing:-.02em}
+.pave .qui{font-size:13px;opacity:.6;margin:2px 0 4px}
+.pave .aide{font-size:12.5px;opacity:.6;margin:0 0 14px}
+.puces{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(62px,1fr));
+  gap:8px;margin-bottom:14px;max-height:46vh;overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+}
+.puce{
+  font-family:var(--chiffres);font-size:19px;font-weight:500;padding:14px 0;
+  border:1.5px solid var(--trait);border-radius:10px;background:#fff;
+  text-align:center;
+}
+.puce.barrer{grid-column:1/-1}
+.puce:hover{border-color:var(--feutre)}
+.puce.barrer{color:var(--biffe);border-color:rgba(194,69,45,.4);flex-basis:100%}
+.saisie-libre{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+.saisie-libre input{
+  flex:1;font-family:var(--chiffres);font-size:20px;text-align:center;padding:12px;
+  border:1.5px solid var(--trait);border-radius:10px;background:#fff;color:var(--encre);
+}
+.pave-actions{display:flex;gap:10px}
+.pave-actions .btn{padding:14px}
+
+/* ---------- classement ---------- */
+.podium{list-style:none;padding:0;margin:0 0 18px}
+.podium li{
+  display:flex;align-items:center;gap:14px;padding:14px 16px;
+  border:1px solid var(--trait);border-radius:12px;margin-bottom:8px;background:var(--papier-clair);
+}
+.podium li.premier{background:var(--encre);color:var(--papier-clair);border-color:var(--encre)}
+.podium .place{font-family:var(--chiffres);font-size:13px;opacity:.55;width:22px}
+.podium li.premier .place{opacity:.7}
+.podium .j{flex:1;font-family:var(--display);font-weight:600;font-size:17px}
+.podium .pts{font-family:var(--chiffres);font-size:19px}
+.podium li.premier .pts{color:var(--moutarde)}
+
+/* parties enregistrées */
+.partie{
+  display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+  padding:13px 14px;border:1px solid var(--trait);border-radius:12px;
+  background:var(--papier-clair);margin-bottom:8px;
+}
+.partie:hover{border-color:var(--feutre)}
+.partie .infos{flex:1;min-width:0}
+.partie b{display:block;font-family:var(--display);font-weight:600;font-size:15px}
+.partie span{font-size:12.5px;opacity:.6;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{
+  font-family:var(--chiffres);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+  padding:4px 8px;border-radius:999px;background:rgba(31,111,92,.14);color:var(--feutre-fonce);
+}
+.badge.finie{background:rgba(19,26,46,.1);color:var(--encre)}
+.vide-msg{text-align:center;padding:26px 10px;opacity:.55;font-size:14px}
+
+.note{font-size:12.5px;opacity:.6;margin-top:14px}
+.erreur{color:var(--biffe);font-size:13.5px;font-weight:600;margin:8px 0 0;min-height:18px}
+</style>
+</head>
+<body>
+
+<header class="appbar">
+  <button class="btn-bar cache" id="btn-retour">‹ Parties</button>
+  <h1 id="titre-appli">Bloc de score<span class="sous" id="sous-titre">Yahtzee et ses variantes</span></h1>
+  <button class="btn-bar cache" id="btn-annuler">Annuler</button>
+</header>
+
+<main>
+
+<!-- ========== ACCUEIL ========== -->
+<section class="ecran actif" id="ecran-accueil">
+  <h2 class="titre-section">Vos parties</h2>
+  <p class="chapo">Reprenez une partie en cours ou lancez-en une nouvelle. Tout reste sur cet appareil.</p>
+  <div id="liste-parties"></div>
+  <div class="principal"><div class="inner">
+    <button class="btn vert" id="btn-nouvelle">Nouvelle partie</button>
+  </div></div>
+</section>
+
+<!-- ========== CRÉATION ========== -->
+<section class="ecran" id="ecran-creation">
+  <h2 class="titre-section">Nouvelle partie</h2>
+
+  <div class="etiquette">1 — Règle du jeu</div>
+  <div id="liste-variantes"></div>
+
+  <div class="etiquette" style="margin-top:22px">2 — Joueurs</div>
+  <div id="liste-joueurs"></div>
+  <button class="lien" id="btn-ajout-joueur">+ Ajouter un joueur</button>
+
+  <div class="etiquette" style="margin-top:22px">3 — Options</div>
+  <div class="carte" id="liste-options"></div>
+
+  <p class="erreur" id="erreur-creation"></p>
+
+  <div class="principal"><div class="inner">
+    <button class="btn fantome" id="btn-annule-creation">Retour</button>
+    <button class="btn vert" id="btn-lancer">Commencer à compter</button>
+  </div></div>
+</section>
+
+<!-- ========== PARTIE ========== -->
+<section class="ecran" id="ecran-partie">
+  <div class="feuille-enveloppe">
+    <table class="feuille"><thead id="tete-feuille"></thead><tbody id="corps-feuille"></tbody></table>
+  </div>
+  <p class="note" id="note-partie"></p>
+  <div class="principal"><div class="inner">
+    <button class="btn fantome" id="btn-supprimer">Supprimer</button>
+    <button class="btn" id="btn-classement">Voir le classement</button>
+  </div></div>
+</section>
+
+<!-- ========== FIN ========== -->
+<section class="ecran" id="ecran-fin">
+  <h2 class="titre-section" id="titre-fin">Classement</h2>
+  <p class="chapo" id="chapo-fin"></p>
+  <ul class="podium" id="podium"></ul>
+  <div class="principal"><div class="inner">
+    <button class="btn fantome" id="btn-revenir-feuille">Feuille</button>
+    <button class="btn vert" id="btn-rejouer">Rejouer avec les mêmes joueurs</button>
+  </div></div>
+</section>
+
+</main>
+
+<!-- ========== PAVÉ DE SAISIE ========== -->
+<div class="voile" id="voile" hidden>
+  <div class="pave" role="dialog" aria-modal="true" aria-labelledby="pave-titre">
+    <h2 id="pave-titre">Catégorie</h2>
+    <p class="qui" id="pave-qui"></p>
+    <p class="aide" id="pave-aide"></p>
+    <div class="puces" id="pave-puces"></div>
+    <p class="erreur" id="pave-erreur"></p>
+    <div class="pave-actions">
+      <button class="btn fantome" id="pave-fermer" style="flex:1">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   1. RÈGLES DES VARIANTES
+   ===================================================================== */
+const faceNoms = ['As','Deux','Trois','Quatre','Cinq','Six'];
+
+function sectionHaute(nbDes){
+  return faceNoms.map((label,i)=>({
+    id:'h'+(i+1), label, face:i+1, type:'multiple', max:(i+1)*nbDes
+  }));
+}
+
+const VARIANTES = {
+  classique:{
+    nom:'Yahtzee classique',
+    resume:'5 dés · 13 cases · bonus 35 à 63 points',
+    des:5, seuilBonus:63, valeurBonus:35,
+    haute:sectionHaute(5),
+    basse:[
+      {id:'brelan', label:'Brelan',        type:'somme', min:5, max:30, pas:1, aide:'Trois dés identiques — on compte la somme des 5 dés.'},
+      {id:'carre',  label:'Carré',         type:'somme', min:5, max:30, pas:1, aide:'Quatre dés identiques — somme des 5 dés.'},
+      {id:'full',   label:'Full',          type:'fixe',  valeur:25, aide:'Un brelan + une paire.'},
+      {id:'ps',     label:'Petite suite',  type:'fixe',  valeur:30, aide:'Quatre dés qui se suivent.'},
+      {id:'gs',     label:'Grande suite',  type:'fixe',  valeur:40, aide:'Cinq dés qui se suivent.'},
+      {id:'yahtzee',label:'Yahtzee',       type:'fixe',  valeur:50, aide:'Cinq dés identiques.'},
+      {id:'chance', label:'Chance',        type:'somme', min:5, max:30, pas:1, aide:'Somme des 5 dés, quels qu’ils soient.'}
+    ],
+    options:[
+      {id:'bonusYahtzee', label:'Bonus Yahtzee', detail:'+100 points par Yahtzee supplémentaire', defaut:true,
+       ligne:{id:'bonusY', label:'Yahtzee suppl.', type:'multiple', face:100, max:400, aide:'Nombre de Yahtzee supplémentaires × 100.'}}
+    ]
+  },
+  scandinave:{
+    nom:'Yatzy scandinave',
+    resume:'5 dés · 15 cases · bonus 50 à 63 points',
+    des:5, seuilBonus:63, valeurBonus:50,
+    haute:sectionHaute(5),
+    basse:[
+      {id:'paire',  label:'Une paire',     type:'somme', min:2, max:12, pas:2, aide:'Somme de la plus forte paire.'},
+      {id:'2paires',label:'Deux paires',   type:'somme', min:6, max:22, pas:2, aide:'Somme des deux paires.'},
+      {id:'brelan', label:'Brelan',        type:'somme', min:3, max:18, pas:3, aide:'Somme des trois dés identiques.'},
+      {id:'carre',  label:'Carré',         type:'somme', min:4, max:24, pas:4, aide:'Somme des quatre dés identiques.'},
+      {id:'ps',     label:'Petite suite',  type:'fixe',  valeur:15, aide:'1-2-3-4-5 → 15 points.'},
+      {id:'gs',     label:'Grande suite',  type:'fixe',  valeur:20, aide:'2-3-4-5-6 → 20 points.'},
+      {id:'full',   label:'Full',          type:'somme', min:7, max:28, pas:1, aide:'Somme du brelan + de la paire.'},
+      {id:'chance', label:'Chance',        type:'somme', min:5, max:30, pas:1, aide:'Somme des 5 dés.'},
+      {id:'yatzy',  label:'Yatzy',         type:'fixe',  valeur:50, aide:'Cinq dés identiques.'}
+    ],
+    options:[]
+  },
+  maxi:{
+    nom:'Maxi Yatzy',
+    resume:'6 dés · 20 cases · bonus 100 à 84 points',
+    des:6, seuilBonus:84, valeurBonus:100,
+    haute:sectionHaute(6),
+    basse:[
+      {id:'paire',  label:'Une paire',     type:'somme', min:2, max:12, pas:2, aide:'Somme de la plus forte paire.'},
+      {id:'2paires',label:'Deux paires',   type:'somme', min:6, max:22, pas:2, aide:'Somme des deux meilleures paires.'},
+      {id:'3paires',label:'Trois paires',  type:'somme', min:12, max:30, pas:2, aide:'Somme des trois paires.'},
+      {id:'brelan', label:'Brelan',        type:'somme', min:3, max:18, pas:3, aide:'Somme des trois dés identiques.'},
+      {id:'carre',  label:'Carré',         type:'somme', min:4, max:24, pas:4, aide:'Somme des quatre dés identiques.'},
+      {id:'quinte', label:'Quinte',        type:'somme', min:5, max:30, pas:5, aide:'Cinq dés identiques — somme de ces cinq dés.'},
+      {id:'full',   label:'Full',          type:'somme', min:7, max:28, pas:1, aide:'Brelan + paire.'},
+      {id:'villa',  label:'Villa',         type:'somme', min:9, max:33, pas:3, aide:'Deux brelans — somme des six dés.'},
+      {id:'tour',   label:'Tour',          type:'somme', min:6, max:34, pas:2, aide:'Un carré + une paire.'},
+      {id:'ps',     label:'Petite suite',  type:'fixe',  valeur:15, aide:'1-2-3-4-5 → 15 points.'},
+      {id:'gs',     label:'Grande suite',  type:'fixe',  valeur:20, aide:'2-3-4-5-6 → 20 points.'},
+      {id:'suite6',  label:'Suite complète',type:'fixe', valeur:21, aide:'1-2-3-4-5-6 → 21 points.'},
+      {id:'chance', label:'Chance',        type:'somme', min:6, max:36, pas:1, aide:'Somme des 6 dés.'},
+      {id:'maxi',   label:'Maxi Yatzy',    type:'fixe',  valeur:100, aide:'Six dés identiques.'}
+    ],
+    options:[]
+  },
+  yams:{
+    nom:'Yam’s (français)',
+    resume:'5 dés · 12 cases · bonus 30 à 60 points',
+    des:5, seuilBonus:60, valeurBonus:30,
+    haute:sectionHaute(5),
+    basse:[
+      {id:'brelan', label:'Brelan',        type:'somme', min:5, max:30, pas:1, aide:'Somme des 5 dés.'},
+      {id:'carre',  label:'Carré',         type:'somme', min:5, max:30, pas:1, aide:'Somme des 5 dés.'},
+      {id:'full',   label:'Full',          type:'fixe',  valeur:30, aide:'Brelan + paire → 30 points.'},
+      {id:'suite',  label:'Suite',         type:'fixe',  valeur:40, aide:'Cinq dés qui se suivent.'},
+      {id:'yams',   label:'Yam’s',         type:'fixe',  valeur:50, aide:'Cinq dés identiques.'},
+      {id:'chance', label:'Chance',        type:'somme', min:5, max:30, pas:1, aide:'Somme des 5 dés.'}
+    ],
+    options:[
+      {id:'yamsSec', label:'Yam’s sec', detail:'+30 points si le Yam’s tombe au premier lancer', defaut:false,
+       ligne:{id:'yamsSec', label:'Yam’s sec', type:'multiple', face:30, max:90, aide:'Nombre de Yam’s secs × 30.'}}
+    ]
+  }
+};
+
+/* =====================================================================
+   2. STOCKAGE (persistant si disponible, sinon en mémoire)
+   ===================================================================== */
+const CLE = 'yatzee:parties';
+const Store = {
+  memoire:null,
+  async lire(){
+    if(this.memoire) return this.memoire;
+    if(window.storage){
+      try{ const r = await window.storage.get(CLE); this.memoire = r ? JSON.parse(r.value) : []; }
+      catch(e){ this.memoire = []; }
+    } else {
+      try{ this.memoire = JSON.parse(window.localStorage.getItem(CLE)) || []; }
+      catch(e){ this.memoire = []; }
+    }
+    return this.memoire;
+  },
+  async ecrire(parties){
+    this.memoire = parties;
+    const texte = JSON.stringify(parties);
+    if(window.storage){
+      try{ await window.storage.set(CLE, texte); }catch(e){}
+    } else {
+      try{ window.localStorage.setItem(CLE, texte); }catch(e){}
+    }
+  }
+};
+
+/* =====================================================================
+   3. ÉTAT
+   ===================================================================== */
+let parties = [];
+let partie = null;          // partie ouverte
+let brouillon = { variante:'classique', joueurs:['',''], options:{} };
+let saisie = null;          // {joueur, ligneId}
+let dernierCoup = null;     // pour Annuler
+
+/* =====================================================================
+   4. OUTILS
+   ===================================================================== */
+const $ = s => document.querySelector(s);
+const el = (tag,cls,txt)=>{const n=document.createElement(tag); if(cls)n.className=cls; if(txt!=null)n.textContent=txt; return n;};
+const PIPS = {1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+function faireDe(n){
+  const d = el('div','pips');
+  const actifs = PIPS[n] || [];
+  for(let i=0;i<9;i++){ const p=el('i'); if(!actifs.includes(i)) p.className='vide'; d.appendChild(p); }
+  return d;
+}
+function id(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+function dateCourte(ts){
+  return new Date(ts).toLocaleDateString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+}
+
+/* lignes actives d'une partie = section haute + basse + lignes d'options cochées */
+function lignesBasses(p){
+  const v = VARIANTES[p.variante];
+  const sup = (v.options||[]).filter(o=>p.options[o.id]).map(o=>o.ligne);
+  return [...v.basse, ...sup];
+}
+function toutesLignes(p){ return [...VARIANTES[p.variante].haute, ...lignesBasses(p)]; }
+
+/* ---- calculs ---- */
+function totalHaut(p,j){
+  return VARIANTES[p.variante].haute.reduce((s,l)=>s+(p.scores[j][l.id] ?? 0),0);
+}
+function bonus(p,j){
+  const v = VARIANTES[p.variante];
+  return totalHaut(p,j) >= v.seuilBonus ? v.valeurBonus : 0;
+}
+function totalBas(p,j){
+  return lignesBasses(p).reduce((s,l)=>s+(p.scores[j][l.id] ?? 0),0);
+}
+function totalGeneral(p,j){ return totalHaut(p,j)+bonus(p,j)+totalBas(p,j); }
+function casesRestantes(p){
+  let n=0;
+  p.joueurs.forEach((_,j)=>toutesLignes(p).forEach(l=>{ if(p.scores[j][l.id]==null) n++; }));
+  return n;
+}
+function classement(p){
+  return p.joueurs
+    .map((nom,j)=>({nom, total:totalGeneral(p,j), j}))
+    .sort((a,b)=>b.total-a.total);
+}
+
+/* =====================================================================
+   5. NAVIGATION
+   ===================================================================== */
+function montrer(nom){
+  document.querySelectorAll('.ecran').forEach(s=>s.classList.remove('actif'));
+  $('#ecran-'+nom).classList.add('actif');
+  const enPartie = (nom==='partie');
+  $('#btn-retour').classList.toggle('cache', nom==='accueil'||nom==='creation');
+  $('#btn-annuler').classList.toggle('cache', !enPartie || !dernierCoup);
+  window.scrollTo(0,0);
+}
+
+/* =====================================================================
+   6. ACCUEIL
+   ===================================================================== */
+function rendreAccueil(){
+  $('#titre-appli').firstChild.nodeValue = 'Bloc de score';
+  $('#sous-titre').textContent = 'Yahtzee et ses variantes';
+  const box = $('#liste-parties'); box.innerHTML='';
+  if(!parties.length){
+    box.appendChild(el('p','vide-msg','Aucune partie pour l’instant. Lancez la première.'));
+    return;
+  }
+  parties.slice().sort((a,b)=>b.maj-a.maj).forEach(p=>{
+    const b = el('button','partie');
+    b.appendChild(faireDe(VARIANTES[p.variante].des>5?6:5));
+    const infos = el('div','infos');
+    infos.appendChild(el('b', null, p.joueurs.join(' · ')));
+    infos.appendChild(el('span', null, VARIANTES[p.variante].nom+' — '+dateCourte(p.maj)));
+    b.appendChild(infos);
+    const fini = casesRestantes(p)===0;
+    b.appendChild(el('span','badge'+(fini?' finie':''), fini?'Terminée':'En cours'));
+    b.onclick = ()=>{ partie=p; dernierCoup=null; rendrePartie(); montrer('partie'); };
+    box.appendChild(b);
+  });
+}
+
+/* =====================================================================
+   7. CRÉATION
+   ===================================================================== */
+function rendreCreation(){
+  const boxV = $('#liste-variantes'); boxV.innerHTML='';
+  Object.entries(VARIANTES).forEach(([cle,v])=>{
+    const b = el('button','variante');
+    b.setAttribute('aria-pressed', String(brouillon.variante===cle));
+    const de = el('div','de'); de.appendChild(faireDe(v.des>5?6:5)); b.appendChild(de);
+    const t = el('div');
+    t.appendChild(el('b',null,v.nom));
+    t.appendChild(el('span',null,v.resume));
+    b.appendChild(t);
+    b.onclick = ()=>{ brouillon.variante=cle; brouillon.options={};
+      (v.options||[]).forEach(o=>brouillon.options[o.id]=o.defaut);
+      rendreCreation(); };
+    boxV.appendChild(b);
+  });
+
+  const boxJ = $('#liste-joueurs'); boxJ.innerHTML='';
+  brouillon.joueurs.forEach((nom,i)=>{
+    const l = el('div','ligne-joueur');
+    l.appendChild(el('span','rang', String(i+1)));
+    const inp = document.createElement('input');
+    inp.type='text'; inp.value=nom; inp.placeholder='Joueur '+(i+1);
+    inp.maxLength=16; inp.autocomplete='off';
+    inp.oninput = e => brouillon.joueurs[i] = e.target.value;
+    l.appendChild(inp);
+    if(brouillon.joueurs.length>1){
+      const r = el('button','retirer','×');
+      r.setAttribute('aria-label','Retirer le joueur '+(i+1));
+      r.onclick = ()=>{ brouillon.joueurs.splice(i,1); rendreCreation(); };
+      l.appendChild(r);
+    }
+    boxJ.appendChild(l);
+  });
+
+  const boxO = $('#liste-options'); boxO.innerHTML='';
+  const opts = VARIANTES[brouillon.variante].options || [];
+  if(!opts.length){
+    boxO.appendChild(el('p','vide-msg','Cette règle n’a pas d’option supplémentaire.'));
+  } else {
+    opts.forEach(o=>{
+      const lab = el('label','option');
+      const c = document.createElement('input'); c.type='checkbox';
+      c.checked = !!brouillon.options[o.id];
+      c.onchange = e => brouillon.options[o.id] = e.target.checked;
+      const t = el('div');
+      t.appendChild(document.createTextNode(o.label));
+      t.appendChild(el('small',null,o.detail));
+      lab.appendChild(c); lab.appendChild(t);
+      boxO.appendChild(lab);
+    });
+  }
+  $('#erreur-creation').textContent='';
+}
+
+async function lancerPartie(){
+  const noms = brouillon.joueurs.map((n,i)=> n.trim() || 'Joueur '+(i+1));
+  if(new Set(noms.map(n=>n.toLowerCase())).size !== noms.length){
+    $('#erreur-creation').textContent = 'Deux joueurs portent le même nom — modifiez-en un.';
+    return;
+  }
+  const p = {
+    id:id(), variante:brouillon.variante, joueurs:noms,
+    options:{...brouillon.options},
+    scores:noms.map(()=>({})),
+    cree:Date.now(), maj:Date.now()
+  };
+  parties.push(p); await Store.ecrire(parties);
+  partie = p; dernierCoup = null;
+  rendrePartie(); montrer('partie');
+}
+
+/* =====================================================================
+   8. FEUILLE DE SCORE
+   ===================================================================== */
+function rendrePartie(){
+  const p = partie, v = VARIANTES[p.variante];
+  $('#titre-appli').firstChild.nodeValue = v.nom;
+  $('#sous-titre').textContent = p.joueurs.length+' joueurs · '+casesRestantes(p)+' cases à remplir';
+
+  const meneur = p.joueurs.length>1 ? classement(p)[0] : null;
+  const avance = meneur && meneur.total>0 ? meneur.j : -1;
+
+  /* en-tête */
+  const thead = $('#tete-feuille'); thead.innerHTML='';
+  const tr = el('tr');
+  const th0 = el('th','col-cat');
+  th0.appendChild(el('div','cat','Catégorie'));
+  tr.appendChild(th0);
+  p.joueurs.forEach((nom,j)=>{
+    const th = el('th','tete-joueur'+(j===avance?' leader':''));
+    th.appendChild(el('div','nom',nom));
+    th.appendChild(el('div','cumul',String(totalGeneral(p,j))));
+    tr.appendChild(th);
+  });
+  thead.appendChild(tr);
+
+  /* corps */
+  const tb = $('#corps-feuille'); tb.innerHTML='';
+
+  const blocTitre = (txt)=>{
+    const r = el('tr','entete-bloc');
+    const c = el('td','col-cat',txt); r.appendChild(c);
+    const d = el('td'); d.colSpan = p.joueurs.length; r.appendChild(d);
+    tb.appendChild(r);
+  };
+  const ligneSaisie = (l)=>{
+    const r = el('tr');
+    const c = el('td','col-cat');
+    const cat = el('div','cat');
+    if(l.face && l.face<=6) cat.appendChild(faireDe(l.face));
+    cat.appendChild(document.createTextNode(l.label));
+    if(l.type==='fixe') cat.appendChild(el('span','val',l.valeur+' pts'));
+    c.appendChild(cat); r.appendChild(c);
+    p.joueurs.forEach((nom,j)=>{
+      const td = el('td');
+      const val = p.scores[j][l.id];
+      const b = el('button','case'+(val==null?' vide':(val===0?' zero':'')));
+      b.textContent = val==null ? '' : String(val);
+      b.setAttribute('aria-label', nom+' — '+l.label+' — '+(val==null?'vide':val+' points'));
+      b.onclick = ()=>ouvrirPave(j,l);
+      td.appendChild(b); r.appendChild(td);
+    });
+    tb.appendChild(r);
+  };
+  const ligneTotal = (label, fn, cls, marqueBonus)=>{
+    const r = el('tr', cls||'total');
+    const c = el('td','col-cat'); c.appendChild(el('div','cat',label)); r.appendChild(c);
+    p.joueurs.forEach((_,j)=>{
+      const td = el('td','lecture');
+      const val = fn(j);
+      td.textContent = val;
+      if(marqueBonus && val>0) td.className='lecture bonus-atteint';
+      r.appendChild(td);
+    });
+    tb.appendChild(r);
+  };
+
+  blocTitre('Section haute');
+  v.haute.forEach(ligneSaisie);
+  ligneTotal('Sous-total', j=>totalHaut(p,j));
+  ligneTotal('Bonus ('+v.seuilBonus+' → '+v.valeurBonus+')', j=>bonus(p,j), 'total', true);
+  ligneTotal('Total haut', j=>totalHaut(p,j)+bonus(p,j), 'total-haut');
+
+  blocTitre('Section basse');
+  lignesBasses(p).forEach(ligneSaisie);
+  ligneTotal('Total section basse', j=>totalBas(p,j));
+  ligneTotal('Total', j=>totalGeneral(p,j), 'grand-total');
+
+  const reste = casesRestantes(p);
+  $('#note-partie').textContent = reste===0
+    ? 'Partie terminée. Consultez le classement.'
+    : 'Touchez une case pour inscrire un score. Il reste '+reste+' case'+(reste>1?'s':'')+'.';
+  $('#btn-annuler').classList.toggle('cache', !dernierCoup);
+  $('#btn-classement').textContent = reste===0 ? 'Voir le classement' : 'Classement provisoire';
+}
+
+/* =====================================================================
+   9. PAVÉ DE SAISIE
+   ===================================================================== */
+function ouvrirPave(j,l){
+  saisie = {j, l};
+  $('#pave-titre').textContent = l.label;
+  $('#pave-qui').textContent = partie.joueurs[j];
+  $('#pave-aide').textContent = l.aide || '';
+  $('#pave-erreur').textContent = '';
+  const puces = $('#pave-puces'); puces.innerHTML='';
+
+  const inscrire = v => { poser(j,l,v); fermerPave(); };
+
+  if(l.type==='multiple'){
+    for(let k=0;k<=Math.round(l.max/l.face);k++){
+      const b = el('button','puce', String(k*l.face));
+      b.onclick = ()=>inscrire(k*l.face);
+      puces.appendChild(b);
+    }
+  } else if(l.type==='fixe'){
+    const b = el('button','puce', String(l.valeur));
+    b.onclick = ()=>inscrire(l.valeur); puces.appendChild(b);
+    const z = el('button','puce barrer','Barrer (0)');
+    z.onclick = ()=>inscrire(0); puces.appendChild(z);
+  } else { /* somme */
+    for(let v=l.min; v<=l.max; v+=l.pas){
+      const b = el('button','puce', String(v));
+      b.onclick = ()=>inscrire(v);
+      puces.appendChild(b);
+    }
+    const z = el('button','puce barrer','Barrer (0)');
+    z.onclick = ()=>inscrire(0); puces.appendChild(z);
+  }
+
+  $('#voile').hidden = false;
+}
+function fermerPave(){ $('#voile').hidden = true; saisie=null; }
+
+async function poser(j,l,valeur){
+  dernierCoup = { j, id:l.id, avant: partie.scores[j][l.id] ?? null, label:l.label };
+  partie.scores[j][l.id] = valeur;
+  partie.maj = Date.now();
+  await Store.ecrire(parties);
+  rendrePartie();
+  if(casesRestantes(partie)===0) setTimeout(()=>{ rendreFin(); montrer('fin'); }, 400);
+}
+
+async function annulerDernier(){
+  if(!dernierCoup) return;
+  const {j,id:lid,avant} = dernierCoup;
+  if(avant==null) delete partie.scores[j][lid];
+  else partie.scores[j][lid] = avant;
+  dernierCoup = null;
+  partie.maj = Date.now();
+  await Store.ecrire(parties);
+  rendrePartie();
+}
+
+/* =====================================================================
+   10. CLASSEMENT
+   ===================================================================== */
+function rendreFin(){
+  const p = partie, fini = casesRestantes(p)===0;
+  const rang = classement(p);
+  $('#titre-fin').textContent = fini ? 'Partie terminée' : 'Classement provisoire';
+  $('#chapo-fin').textContent = fini
+    ? (rang.length>1 && rang[0].total===rang[1].total
+        ? 'Égalité en tête à '+rang[0].total+' points.'
+        : rang[0].nom+' l’emporte avec '+rang[0].total+' points.')
+    : 'Il reste '+casesRestantes(p)+' case(s) à remplir.';
+  const ul = $('#podium'); ul.innerHTML='';
+  rang.forEach((r,i)=>{
+    const li = el('li', i===0 && fini ? 'premier' : '');
+    li.appendChild(el('span','place', String(i+1)));
+    li.appendChild(el('span','j', r.nom));
+    li.appendChild(el('span','pts', String(r.total)));
+    ul.appendChild(li);
+  });
+}
+
+/* =====================================================================
+   11. ÉVÉNEMENTS
+   ===================================================================== */
+$('#btn-nouvelle').onclick = ()=>{
+  const v = VARIANTES[brouillon.variante];
+  brouillon.options = {}; (v.options||[]).forEach(o=>brouillon.options[o.id]=o.defaut);
+  if(!brouillon.joueurs.length) brouillon.joueurs=['',''];
+  $('#titre-appli').firstChild.nodeValue='Nouvelle partie';
+  $('#sous-titre').textContent='Règle, joueurs, options';
+  rendreCreation(); montrer('creation');
+};
+$('#btn-ajout-joueur').onclick = ()=>{
+  if(brouillon.joueurs.length>=8){ $('#erreur-creation').textContent='Huit joueurs au maximum.'; return; }
+  brouillon.joueurs.push(''); rendreCreation();
+  const inputs = $('#liste-joueurs').querySelectorAll('input');
+  inputs[inputs.length-1].focus();
+};
+$('#btn-annule-creation').onclick = ()=>{ rendreAccueil(); montrer('accueil'); };
+$('#btn-lancer').onclick = lancerPartie;
+$('#btn-retour').onclick = ()=>{ partie=null; dernierCoup=null; rendreAccueil(); montrer('accueil'); };
+$('#btn-annuler').onclick = annulerDernier;
+$('#btn-classement').onclick = ()=>{ rendreFin(); montrer('fin'); };
+$('#btn-revenir-feuille').onclick = ()=>{ rendrePartie(); montrer('partie'); };
+$('#btn-rejouer').onclick = ()=>{
+  brouillon = { variante:partie.variante, joueurs:[...partie.joueurs], options:{...partie.options} };
+  lancerPartie();
+};
+$('#btn-supprimer').onclick = async ()=>{
+  if(!confirm('Supprimer définitivement cette partie ?')) return;
+  parties = parties.filter(x=>x.id!==partie.id);
+  await Store.ecrire(parties);
+  partie=null; dernierCoup=null; rendreAccueil(); montrer('accueil');
+};
+$('#pave-fermer').onclick = fermerPave;
+$('#voile').onclick = e => { if(e.target.id==='voile') fermerPave(); };
+document.addEventListener('keydown', e=>{ if(e.key==='Escape' && !$('#voile').hidden) fermerPave(); });
+
+/* =====================================================================
+   12. DÉMARRAGE
+   ===================================================================== */
+(async ()=>{
+  parties = await Store.lire();
+  rendreAccueil();
+  montrer('accueil');
+})();
+</script>
+</body>
+</html>
