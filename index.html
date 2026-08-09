@@ -183,6 +183,18 @@ tr.entete-bloc .col-cat{background:var(--encre);color:var(--papier-clair)}
   content:"";position:absolute;left:22%;right:22%;top:50%;
   height:2px;background:var(--biffe);transform:rotate(-14deg);border-radius:2px;
 }
+/* couleur par section et par état */
+tr.bloc-haut .col-cat{background:#F3EEE0}
+tr.bloc-bas .col-cat{background:#E7EFEB}
+tr.bloc-haut .cat{border-left:4px solid rgba(232,179,60,.55)}
+tr.bloc-bas .cat{border-left:4px solid rgba(31,111,92,.45)}
+tr.vedette .col-cat{background:#F6E7BE}
+tr.vedette .cat{border-left-color:var(--moutarde);font-weight:800}
+tr.vedette .case{background:rgba(232,179,60,.07)}
+.case.remplie{background:#fff;color:var(--feutre-fonce)}
+tr.vedette .case.remplie{background:#fff;color:#8a6410}
+.case.zero{color:var(--biffe);background:rgba(194,69,45,.05)}
+
 .case.verrouillee{cursor:default;opacity:.3}
 .case.verrouillee:hover{background:none}
 .case.verrouillee.vide::after{content:"×";font-size:15px}
@@ -782,8 +794,9 @@ function rendrePartie(){
     const d = el('td'); d.colSpan = p.joueurs.length; r.appendChild(d);
     tb.appendChild(r);
   };
-  const ligneSaisie = (l)=>{
-    const r = el('tr');
+  const vedettes = ['yahtzee','yatzy','maxi','yams'];
+  const ligneSaisie = (l, bloc)=>{
+    const r = el('tr','bloc-'+bloc+(vedettes.includes(l.id)?' vedette':''));
     const c = el('td','col-cat');
     const cat = el('div','cat');
     if(l.face && l.face<=6) cat.appendChild(faireDe(l.face));
@@ -794,7 +807,7 @@ function rendrePartie(){
       const td = el('td');
       const val = p.scores[j][l.id];
       const ouverte = caseOuverte(p,j,l);
-      const b = el('button','case'+(val==null?' vide':(val===0?' zero':''))+(ouverte?'':' verrouillee'));
+      const b = el('button','case'+(val==null?' vide':(val===0?' zero':' remplie'))+(ouverte?'':' verrouillee'));
       b.textContent = val==null ? '' : String(val);
       b.disabled = !ouverte;
       b.setAttribute('aria-label', nom+' — '+l.label+' — '+(val==null?(ouverte?'vide':'verrouillée'):val+' points'));
@@ -817,13 +830,13 @@ function rendrePartie(){
   };
 
   blocTitre('Section haute');
-  v.haute.forEach(ligneSaisie);
+  v.haute.forEach(l=>ligneSaisie(l,'haut'));
   ligneTotal('Sous-total', j=>totalHaut(p,j));
   ligneTotal('Bonus ('+v.seuilBonus+' → '+v.valeurBonus+')', j=>bonus(p,j), 'total', true);
   ligneTotal('Total haut', j=>totalHaut(p,j)+bonus(p,j), 'total total-haut');
 
   blocTitre('Section basse');
-  lignesBasses(p).forEach(ligneSaisie);
+  lignesBasses(p).forEach(l=>ligneSaisie(l,'bas'));
   ligneTotal('Total section basse', j=>totalBas(p,j));
   ligneTotal('Total', j=>totalGeneral(p,j), 'grand-total');
 
