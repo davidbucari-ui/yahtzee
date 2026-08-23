@@ -294,6 +294,15 @@ tr.total-haut .lecture{font-family:var(--chiffres);font-weight:500;text-align:ce
 .badge.finie{background:rgba(19,26,46,.1);color:var(--encre)}
 .vide-msg{text-align:center;padding:26px 10px;opacity:.55;font-size:14px}
 
+/* ---------- bascule humain / joueur virtuel ---------- */
+.bascule{
+  flex:0 0 auto;height:42px;padding:0 12px;border-radius:10px;
+  border:1.5px solid var(--trait);background:var(--papier-clair);
+  font-family:var(--chiffres);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+}
+.bascule.on{background:var(--encre);color:var(--papier-clair);border-color:var(--encre)}
+.bascule:hover{border-color:var(--feutre)}
+
 /* ---------- carnet de joueurs ---------- */
 .carnet{margin:2px 0 12px}
 .carnet .etiquette{margin-bottom:8px}
@@ -332,8 +341,74 @@ tr.total-haut .lecture{font-family:var(--chiffres);font-weight:500;text-align:ce
 .puce-j em{font-family:var(--chiffres);font-style:normal;font-size:13px;opacity:.6}
 .puce-j.encours{background:var(--feutre);border-color:var(--feutre);color:var(--papier-clair)}
 .puce-j.encours em{opacity:.85}
+.puce-j .tag{
+  font-family:var(--chiffres);font-style:normal;font-size:9.5px;letter-spacing:.1em;
+  padding:2px 5px;border-radius:5px;background:rgba(19,26,46,.1);
+}
+.puce-j.encours .tag{background:rgba(245,243,236,.22)}
 .puce-j.meneur b::after{content:" ★";color:var(--moutarde)}
 .puce-j.fini{opacity:.5}
+
+/* ---------- dés virtuels ---------- */
+.panneau-des{
+  background:var(--papier-clair);border:1px solid var(--trait);border-radius:14px;
+  padding:14px;margin-bottom:14px;
+}
+.des-tete{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.des-tete .etiquette{margin:0;flex:1}
+.des-tete .lien{font-size:13px}
+.des-rangee{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:12px}
+.de-jeu{
+  width:58px;height:58px;border-radius:13px;background:#fff;
+  border:2px solid var(--trait);display:grid;place-items:center;position:relative;
+  transition:border-color .12s,background .12s;
+}
+.de-jeu .pips{
+  grid-template-columns:repeat(3,9px);grid-template-rows:repeat(3,9px);
+  gap:4px;width:35px;flex-basis:35px;
+}
+.de-jeu .pips i{opacity:1}
+.de-jeu.vierge{background:repeating-linear-gradient(135deg,#fff,#fff 6px,#F2F0E8 6px,#F2F0E8 12px);border-style:dashed}
+.de-jeu.garde{border-color:var(--feutre);background:#E9F2EF}
+.de-jeu.garde::after{
+  content:"gardé";position:absolute;bottom:-9px;left:50%;transform:translateX(-50%);
+  font-family:var(--chiffres);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;
+  background:var(--feutre);color:var(--papier-clair);padding:2px 7px;border-radius:999px;
+}
+.de-jeu.roule{animation:secousse .4s ease}
+@keyframes secousse{
+  0%{transform:rotate(0) scale(1)}
+  30%{transform:rotate(-13deg) scale(1.09)}
+  60%{transform:rotate(11deg) scale(1.04)}
+  100%{transform:rotate(0) scale(1)}
+}
+@media (prefers-reduced-motion:reduce){.de-jeu.roule{animation:none}}
+.des-actions{display:flex;gap:10px;align-items:center}
+.des-actions .btn{padding:13px;font-size:15px}
+.des-etat{
+  font-family:var(--chiffres);font-size:12px;letter-spacing:.08em;text-transform:uppercase;
+  opacity:.6;text-align:center;margin:0 0 10px;
+}
+.des-aide{font-size:12.5px;opacity:.6;margin:10px 0 0;text-align:center}
+.btn-des{
+  width:100%;background:var(--papier-clair);border:1px solid var(--trait);
+  border-radius:12px;padding:12px;font-weight:600;font-size:14px;margin-bottom:14px;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn-des:hover{border-color:var(--feutre)}
+
+/* proposition calculée depuis les dés */
+.case .sugg{
+  font-family:var(--chiffres);font-size:15px;font-weight:400;
+  color:var(--feutre);opacity:.62;
+}
+.case .sugg.nul{color:var(--biffe);opacity:.5}
+.puce.calcule{
+  grid-column:1/-1;background:var(--feutre);color:var(--papier-clair);
+  border-color:var(--feutre);font-size:17px;font-weight:500;padding:15px 0;
+}
+.puce.calcule small{display:block;font-family:var(--corps);font-size:11.5px;opacity:.85;font-weight:400;letter-spacing:.02em}
+.puce.calcule.rien{background:var(--biffe);border-color:var(--biffe)}
 
 tr.reste td,tr.reste .col-cat{background:rgba(232,179,60,.16)}
 tr.reste .cat{font-weight:600}
@@ -401,6 +476,7 @@ tr.reste .lecture.ok{color:var(--feutre);font-weight:600}
 <!-- ========== PARTIE ========== -->
 <section class="ecran" id="ecran-partie">
   <div class="barre-joueurs" id="barre-joueurs"></div>
+  <div id="panneau-des"></div>
   <div class="feuille-enveloppe">
     <table class="feuille"><thead id="tete-feuille"></thead><tbody id="corps-feuille"></tbody></table>
   </div>
@@ -636,7 +712,7 @@ const Store = {
 /* ---- carnet de joueurs : les noms déjà utilisés, gardés d'une partie à l'autre ---- */
 const CLE_CARNET = 'yatzee:joueurs';
 const Carnet = {
-  donnees:{noms:[], dernier:[]},
+  donnees:{noms:[], dernier:[], derniersBots:[]},
   async lire(){
     let d = null;
     if(window.storage){
@@ -644,7 +720,11 @@ const Carnet = {
     } else {
       try{ d = JSON.parse(window.localStorage.getItem(CLE_CARNET)); }catch(e){}
     }
-    if(d && Array.isArray(d.noms)) this.donnees = {noms:d.noms, dernier:Array.isArray(d.dernier)?d.dernier:[]};
+    if(d && Array.isArray(d.noms)) this.donnees = {
+      noms:d.noms,
+      dernier:Array.isArray(d.dernier)?d.dernier:[],
+      derniersBots:Array.isArray(d.derniersBots)?d.derniersBots:[]
+    };
     return this.donnees;
   },
   async ecrire(){
@@ -655,8 +735,9 @@ const Carnet = {
       try{ window.localStorage.setItem(CLE_CARNET, texte); }catch(e){}
     }
   },
-  async retenir(dernier, connus){
+  async retenir(dernier, connus, bots){
     this.donnees.dernier = [...dernier];
+    this.donnees.derniersBots = Array.isArray(bots) ? [...bots] : [];
     const vus = new Set(connus.map(n=>n.toLowerCase()));
     this.donnees.noms = [...connus, ...this.donnees.noms.filter(n=>!vus.has(n.toLowerCase()))].slice(0,20);
     await this.ecrire();
@@ -673,7 +754,7 @@ const Carnet = {
    ===================================================================== */
 let parties = [];
 let partie = null;          // partie ouverte
-let brouillon = { variante:'classique', joueurs:['',''], options:{} };
+let brouillon = { variante:'classique', joueurs:['',''], bots:[false,false], options:{} };
 let saisie = null;          // {joueur, ligneId}
 let dernierCoup = null;     // pour Annuler
 
@@ -768,6 +849,7 @@ function montrer(nom){
   $('#btn-annuler').classList.toggle('cache', !enPartie || !dernierCoup);
   $('#btn-regles').classList.toggle('cache', nom!=='partie' && nom!=='creation');
   window.scrollTo(0,0);
+  if(nom==='partie') planifierBot(); else clearTimeout(minuteurBot);
 }
 
 /* =====================================================================
@@ -798,7 +880,21 @@ function rendreAccueil(){
 /* =====================================================================
    7. CRÉATION
    ===================================================================== */
+/* un nom disponible pour un joueur virtuel */
+function nomBotLibre(){
+  const pris = new Set(brouillon.joueurs.map(n=>n.trim().toLowerCase()));
+  const noms = ['Robot','Cléo','Zéro','Pip','Alba'];
+  for(const n of noms) if(!pris.has(n.toLowerCase())) return n;
+  let k=2; while(pris.has(('Robot '+k).toLowerCase())) k++;
+  return 'Robot '+k;
+}
+
 function rendreCreation(){
+  /* on garde bots aligné sur joueurs */
+  if(!Array.isArray(brouillon.bots)) brouillon.bots = [];
+  brouillon.bots.length = brouillon.joueurs.length;
+  for(let i=0;i<brouillon.bots.length;i++) brouillon.bots[i] = !!brouillon.bots[i];
+
   const boxV = $('#liste-variantes'); boxV.innerHTML='';
   Object.entries(VARIANTES).forEach(([cle,v])=>{
     const b = el('button','variante');
@@ -823,10 +919,20 @@ function rendreCreation(){
     inp.maxLength=16; inp.autocomplete='off';
     inp.oninput = e => brouillon.joueurs[i] = e.target.value;
     l.appendChild(inp);
+    const bot = !!brouillon.bots[i];
+    const bb = el('button','bascule'+(bot?' on':''), bot?'Virtuel':'Humain');
+    bb.setAttribute('aria-pressed', String(bot));
+    bb.setAttribute('title','Joueur virtuel : lance les dés et choisit sa case tout seul');
+    bb.onclick = ()=>{
+      brouillon.bots[i] = !bot;
+      if(brouillon.bots[i] && !brouillon.joueurs[i].trim()) brouillon.joueurs[i] = nomBotLibre();
+      rendreCreation();
+    };
+    l.appendChild(bb);
     if(brouillon.joueurs.length>1){
       const r = el('button','retirer','×');
       r.setAttribute('aria-label','Retirer le joueur '+(i+1));
-      r.onclick = ()=>{ brouillon.joueurs.splice(i,1); rendreCreation(); };
+      r.onclick = ()=>{ brouillon.joueurs.splice(i,1); brouillon.bots.splice(i,1); rendreCreation(); };
       l.appendChild(r);
     }
     boxJ.appendChild(l);
@@ -848,7 +954,7 @@ function rendreCreation(){
       b.onclick = ()=>{
         const libre = brouillon.joueurs.findIndex(n=>!n.trim());
         if(libre>=0) brouillon.joueurs[libre] = nom;
-        else if(brouillon.joueurs.length<8) brouillon.joueurs.push(nom);
+        else if(brouillon.joueurs.length<8){ brouillon.joueurs.push(nom); brouillon.bots.push(false); }
         else { $('#erreur-creation').textContent='Huit joueurs au maximum.'; return; }
         rendreCreation();
       };
@@ -884,17 +990,298 @@ async function lancerPartie(){
     return;
   }
   const p = {
-    id:id(), variante:brouillon.variante, joueurs:noms,
+    id:id(), variante:brouillon.variante, joueurs:noms, bots:[...brouillon.bots],
     options:{...brouillon.options},
     scores:noms.map(()=>({})),
     tour:0,
     cree:Date.now(), maj:Date.now()
   };
-  const saisis = brouillon.joueurs.map(n=>n.trim()).filter(Boolean);
-  if(saisis.length) await Carnet.retenir(noms, saisis);
+  const saisis = brouillon.joueurs.map(n=>n.trim()).filter((n,i)=>n && !brouillon.bots[i]);
+  if(saisis.length || noms.length) await Carnet.retenir(noms, saisis, [...brouillon.bots]);
   parties.push(p); await Store.ecrire(parties);
   partie = p; dernierCoup = null;
   rendrePartie(); montrer('partie');
+}
+
+/* =====================================================================
+   7 bis. DÉS VIRTUELS
+   ===================================================================== */
+function etatDes(p){
+  const n = VARIANTES[p.variante].des;
+  if(!p.des || !Array.isArray(p.des.valeurs) || p.des.valeurs.length!==n){
+    p.des = {valeurs:Array(n).fill(0), gardes:Array(n).fill(false), lancers:0};
+  }
+  return p.des;
+}
+function desLances(p){ return etatDes(p).lancers>0; }
+function reinitDes(p){
+  const n = VARIANTES[p.variante].des;
+  p.des = {valeurs:Array(n).fill(0), gardes:Array(n).fill(false), lancers:0};
+}
+function de6(){ return 1+Math.floor(Math.random()*6); }
+function lancer(p){
+  const d = etatDes(p);
+  if(d.lancers>=3) return [];
+  const bouges = [];
+  d.valeurs = d.valeurs.map((v,i)=>{
+    if(d.lancers>0 && d.gardes[i]) return v;
+    bouges.push(i); return de6();
+  });
+  d.lancers++;
+  return bouges;
+}
+
+/* ---- lecture d'une main de dés ---- */
+function compte(des){ const c=[0,0,0,0,0,0,0]; des.forEach(d=>{ if(d>=1&&d<=6) c[d]++; }); return c; }
+function sommeTout(des){ return des.reduce((a,b)=>a+b,0); }
+function meilleurN(c,n){ for(let f=6;f>=1;f--) if(c[f]>=n) return f; return 0; }
+function listePaires(c){ const r=[]; for(let f=6;f>=1;f--) if(c[f]>=2) r.push(f); return r; }
+function suiteMax(c){ let best=0,cur=0; for(let f=1;f<=6;f++){ if(c[f]>0){cur++; if(cur>best)best=cur;} else cur=0; } return best; }
+function contient(c,faces){ return faces.every(f=>c[f]>=1); }
+
+/* Score d'une ligne pour une main donnée. null = à saisir soi-même. */
+function scoreDe(p,l,des){
+  if(!des || !des.some(d=>d>0)) return null;
+  const c = compte(des), S = sommeTout(des);
+  const exact = (p.variante==='scandinave' || p.variante==='maxi'); /* on ne compte que les dés concernés */
+  if(l.type==='multiple' && l.face<=6) return c[l.face]*l.face;
+  if(l.type==='multiple') return null;            /* bonus Yahtzee, Yam's sec : au joueur de compter */
+  let f, g, pr;
+  switch(l.id){
+    case 'chance': return S;
+    case 'paire':   pr=listePaires(c); return pr.length ? 2*pr[0] : 0;
+    case '2paires': pr=listePaires(c); return pr.length>=2 ? 2*(pr[0]+pr[1]) : 0;
+    case '3paires': pr=listePaires(c); return pr.length>=3 ? 2*(pr[0]+pr[1]+pr[2]) : 0;
+    case 'brelan':  f=meilleurN(c,3); return f ? (exact ? 3*f : S) : 0;
+    case 'carre':   f=meilleurN(c,4); return f ? (exact ? 4*f : S) : 0;
+    case 'quinte':  f=meilleurN(c,5); return f ? 5*f : 0;
+    case 'full':
+      f = meilleurN(c,3);
+      if(!f) return 0;
+      g = 0; for(let x=6;x>=1;x--) if(x!==f && c[x]>=2){ g=x; break; }
+      if(!g) return 0;
+      return l.type==='fixe' ? l.valeur : 3*f+2*g;
+    case 'villa':
+      f = meilleurN(c,3);
+      if(!f) return 0;
+      g = 0; for(let x=6;x>=1;x--) if(x!==f && c[x]>=3){ g=x; break; }
+      return g ? 3*f+3*g : 0;
+    case 'tour':
+      f = meilleurN(c,4);
+      if(!f) return 0;
+      g = 0; for(let x=6;x>=1;x--) if(x!==f && c[x]>=2){ g=x; break; }
+      return g ? 4*f+2*g : 0;
+    case 'ps':
+      return (exact ? contient(c,[1,2,3,4,5]) : suiteMax(c)>=4) ? l.valeur : 0;
+    case 'gs':
+      return (exact ? contient(c,[2,3,4,5,6]) : suiteMax(c)>=5) ? l.valeur : 0;
+    case 'suite':  return suiteMax(c)>=5 ? l.valeur : 0;
+    case 'suite6': return contient(c,[1,2,3,4,5,6]) ? l.valeur : 0;
+    case 'yahtzee': case 'yatzy': case 'yams': return meilleurN(c,5) ? l.valeur : 0;
+    case 'maxi':    return meilleurN(c,6) ? l.valeur : 0;
+  }
+  return null;
+}
+
+/* ---- panneau ---- */
+function rendreDes(){
+  const p = partie, hote = $('#panneau-des'); hote.innerHTML='';
+  if(casesRestantes(p)===0) return;
+  if(p.desCaches){
+    const b = el('button','btn-des','Afficher les dés virtuels');
+    b.onclick = ()=>{ p.desCaches=false; rendrePartie(); };
+    hote.appendChild(b); return;
+  }
+  const jc = joueurCourant(p), d = etatDes(p), bot = estBot(p,jc);
+  const bloc = el('div','panneau-des');
+
+  const tete = el('div','des-tete');
+  tete.appendChild(el('div','etiquette','Dés — '+p.joueurs[jc]+(bot?' (joueur virtuel)':'')));
+  if((p.bots||[]).some(Boolean)){
+    const auto = p.botAuto!==false;
+    const a = el('button','lien', auto ? 'Auto : oui' : 'Auto : non');
+    a.setAttribute('title','Les joueurs virtuels jouent seuls dès que c’est leur tour');
+    a.onclick = async ()=>{ p.botAuto = !auto; await sauverDiscret(); rendrePartie(); };
+    tete.appendChild(a);
+  }
+  const cacher = el('button','lien','Masquer');
+  cacher.onclick = ()=>{ p.desCaches=true; rendrePartie(); };
+  tete.appendChild(cacher);
+  bloc.appendChild(tete);
+
+  bloc.appendChild(el('p','des-etat', d.lancers===0 ? 'Aucun lancer' : 'Lancer '+d.lancers+' sur 3'));
+
+  const rangee = el('div','des-rangee'); rangee.id='des-rangee';
+  d.valeurs.forEach((v,i)=>{
+    const b = el('button','de-jeu'+(v===0?' vierge':'')+((d.gardes[i]&&d.lancers>0)?' garde':''));
+    if(v>0) b.appendChild(faireDe(v));
+    b.setAttribute('aria-label','Dé '+(i+1)+(v?' — '+v:' — non lancé')+(d.gardes[i]?' — gardé':''));
+    b.disabled = d.lancers===0 || d.lancers>=3 || bot || botJoue;
+    b.onclick = async ()=>{ d.gardes[i]=!d.gardes[i]; await sauverDiscret(); rendrePartie(); };
+    rangee.appendChild(b);
+  });
+  bloc.appendChild(rangee);
+
+  const actions = el('div','des-actions');
+  if(bot){
+    const auto = p.botAuto!==false;
+    const b = el('button','btn vert',
+      botJoue ? p.joueurs[jc]+' joue…' : (auto ? 'À '+p.joueurs[jc]+' de jouer…' : 'Faire jouer '+p.joueurs[jc]));
+    b.disabled = botJoue || auto;
+    b.onclick = jouerBot;
+    actions.appendChild(b);
+  } else {
+    const b = el('button','btn vert',
+      d.lancers===0 ? 'Lancer les dés'
+      : d.lancers<3 ? 'Relancer ('+(3-d.lancers)+' restant'+((3-d.lancers)>1?'s':'')+')'
+      : 'Plus de lancer');
+    b.disabled = d.lancers>=3;
+    b.onclick = lancerEtAnimer;
+    actions.appendChild(b);
+    if(d.lancers>0){
+      const raz = el('button','btn fantome','Effacer');
+      raz.onclick = async ()=>{ reinitDes(p); await sauverDiscret(); rendrePartie(); };
+      actions.appendChild(raz);
+    }
+  }
+  bloc.appendChild(actions);
+
+  const aide = el('p','des-aide', messageDes || (
+    bot ? (p.botAuto!==false ? 'Ce joueur lance et choisit sa case tout seul.' : 'Mode manuel : touchez le bouton pour dérouler son tour.')
+    : d.lancers===0 ? 'Trois lancers par tour. Vous pouvez aussi jouer avec de vrais dés et saisir le score à la main.'
+    : d.lancers>=3 ? 'Dernier lancer : choisissez une case, les valeurs possibles y sont affichées.'
+    : 'Touchez un dé pour le garder, puis relancez. Les cases libres montrent ce que valent vos dés.'));
+  bloc.appendChild(aide);
+  hote.appendChild(bloc);
+}
+
+let messageDes = '';
+let botJoue = false;
+
+async function sauverDiscret(){ await Store.ecrire(parties); }
+
+async function lancerEtAnimer(){
+  const bouges = lancer(partie);
+  messageDes = '';
+  await sauverDiscret();
+  rendrePartie();
+  animer(bouges);
+}
+function animer(indices){
+  const r = $('#des-rangee'); if(!r) return;
+  indices.forEach(i=>{
+    const n = r.children[i];
+    if(n){ n.classList.remove('roule'); void n.offsetWidth; n.classList.add('roule'); }
+  });
+}
+
+/* =====================================================================
+   7 ter. JOUEUR VIRTUEL
+   ===================================================================== */
+function estBot(p,j){ return !!(p.bots && p.bots[j]); }
+
+/* ce que « coûte » un zéro dans une case, pour éviter de barrer n'importe quoi */
+function coutBarrer(l){
+  if(l.type==='fixe') return l.valeur*0.6;
+  if(l.type==='multiple') return l.face<=6 ? l.face*3*0.6 : 0;
+  return ((l.min+l.max)/2)*0.5;
+}
+/* meilleure case libre pour une main donnée */
+function meilleurCoup(p,j,des){
+  const v = VARIANTES[p.variante];
+  let best = null;
+  toutesLignes(p).forEach(l=>{
+    if(p.scores[j][l.id]!=null) return;
+    if(!caseOuverte(p,j,l)) return;
+    const s = scoreDe(p,l,des);
+    if(s==null) return;
+    let val = s;
+    if(l.type==='multiple' && l.face<=6){
+      val += (s - 3*l.face)*0.6;                     /* viser trois dés par case */
+      if(s>=3*l.face && totalHaut(p,j)<v.seuilBonus) val += 5;
+    }
+    if(s===0) val = -coutBarrer(l);
+    if(!best || val>best.val) best = {l, s, val};
+  });
+  return best;
+}
+/* espérance d'un jeu de dés gardés, estimée par tirages */
+function evaluerGardes(p,j,valeurs,gardes,tirages){
+  let total = 0;
+  for(let k=0;k<tirages;k++){
+    const d = valeurs.map((v,i)=>gardes[i]?v:de6());
+    const c = meilleurCoup(p,j,d);
+    total += c ? c.val : 0;
+  }
+  return total/tirages;
+}
+function choisirGardes(p,j,valeurs){
+  const n = valeurs.length, tirages = n>5 ? 26 : 34;
+  let best = null;
+  for(let masque=0; masque<(1<<n); masque++){
+    const gardes = [];
+    for(let i=0;i<n;i++) gardes.push(!!(masque & (1<<i)));
+    const note = evaluerGardes(p,j,valeurs,gardes,tirages);
+    if(!best || note>best.note) best = {note, gardes};
+  }
+  return best.gardes;
+}
+const pause = ms => new Promise(r=>setTimeout(r,ms));
+
+/* le joueur virtuel prend la main tout seul dès que c'est son tour */
+let minuteurBot = null;
+let sauterAuto = false;      /* après un « Annuler », on laisse la main à l'humain */
+function planifierBot(delai){
+  clearTimeout(minuteurBot);
+  const p = partie;
+  if(!p || botJoue) return;
+  if(sauterAuto){ sauterAuto = false; return; }
+  if(p.botAuto===false) return;
+  if(!$('#ecran-partie').classList.contains('actif')) return;
+  if(!$('#voile').hidden) return;                       /* pavé de saisie ouvert */
+  const j = joueurCourant(p);
+  if(!estBot(p,j) || casesRestantesJoueur(p,j)===0) return;
+  minuteurBot = setTimeout(jouerBot, delai==null ? 700 : delai);
+}
+
+async function jouerBot(){
+  clearTimeout(minuteurBot);
+  const p = partie, j = joueurCourant(p);
+  if(!p || botJoue || !estBot(p,j) || casesRestantesJoueur(p,j)===0) return;
+  if(!$('#ecran-partie').classList.contains('actif')) return;
+  botJoue = true;
+  reinitDes(p);
+  rendrePartie();
+  const d = etatDes(p);
+
+  for(let tour=1; tour<=3; tour++){
+    messageDes = tour===1 ? 'Lancer…' : 'Relance…';
+    const bouges = lancer(p);
+    rendrePartie(); animer(bouges);
+    await pause(520);
+    if(tour<3){
+      d.gardes = choisirGardes(p,j,d.valeurs);
+      const gardes = d.valeurs.filter((_,i)=>d.gardes[i]);
+      messageDes = gardes.length
+        ? 'Garde '+gardes.slice().sort((a,b)=>a-b).join(', ')+'.'
+        : 'Ne garde rien.';
+      rendrePartie();
+      await pause(650);
+      /* main déjà parfaite : inutile de relancer */
+      if(gardes.length===d.valeurs.length) break;
+    }
+  }
+
+  const coup = meilleurCoup(p,j,d.valeurs);
+  const ligne = coup ? coup.l : toutesLignes(p).find(l=>p.scores[j][l.id]==null);
+  const valeur = coup ? coup.s : 0;
+  messageDes = p.joueurs[j]+' inscrit '+valeur+' en « '+ligne.label+' »'+(valeur===0?' (case barrée)':'')+'.';
+  const nomBot = p.joueurs[j];
+  botJoue = false;
+  await poser(j, ligne, valeur);
+  messageDes = nomBot+' a inscrit '+valeur+' en « '+ligne.label+' ».';
+  rendreDes();
+  planifierBot(1200);
 }
 
 /* =====================================================================
@@ -922,8 +1309,10 @@ function rendrePartie(){
       const b = el('button','puce-j'+(j===jc?' encours':'')+(j===avance?' meneur':'')+(fini&&j!==jc?' fini':''));
       b.setAttribute('aria-pressed', String(j===jc));
       b.appendChild(el('b',null,nom));
+      if(estBot(p,j)) b.appendChild(el('i','tag','IA'));
       b.appendChild(el('em',null,String(totalGeneral(p,j))));
-      b.onclick = ()=>{ p.tour=j; rendrePartie(); };
+      b.disabled = botJoue;
+      b.onclick = ()=>{ if(j===p.tour) return; p.tour=j; reinitDes(p); messageDes=''; sauverDiscret(); rendrePartie(); };
       bande.appendChild(b);
     });
     barre.appendChild(bande);
@@ -932,6 +1321,8 @@ function rendrePartie(){
     suiv.onclick = ()=>changerJoueur(1);
     barre.appendChild(suiv);
   }
+
+  rendreDes();
 
   /* en-tête : uniquement le joueur en cours */
   const thead = $('#tete-feuille'); thead.innerHTML='';
@@ -967,9 +1358,12 @@ function rendrePartie(){
     const td = el('td');
     const val = p.scores[j][l.id];
     const ouverte = caseOuverte(p,j,l);
-    const b = el('button','case'+(val==null?' vide':(val===0?' zero':' remplie'))+(ouverte?'':' verrouillee'));
+    /* proposition calculée à partir des dés lancés */
+    const sugg = (val==null && ouverte && !p.desCaches && desLances(p)) ? scoreDe(p,l,etatDes(p).valeurs) : null;
+    const b = el('button','case'+(val==null?(sugg==null?' vide':''):(val===0?' zero':' remplie'))+(ouverte?'':' verrouillee'));
     b.textContent = val==null ? '' : String(val);
-    b.disabled = !ouverte;
+    if(val==null && sugg!=null) b.appendChild(el('span','sugg'+(sugg===0?' nul':''), String(sugg)));
+    b.disabled = !ouverte || botJoue;
     b.setAttribute('aria-label', nom+' — '+l.label+' — '+(val==null?(ouverte?'vide':'verrouillée'):val+' points'));
     if(ouverte) b.onclick = ()=>ouvrirPave(j,l);
     td.appendChild(b); r.appendChild(td);
@@ -1024,6 +1418,7 @@ function rendrePartie(){
   $('#note-partie').textContent = rappels.join(' ');
   $('#btn-annuler').classList.toggle('cache', !dernierCoup);
   $('#btn-classement').textContent = reste===0 ? 'Voir le classement' : 'Classement provisoire';
+  planifierBot();
 }
 
 /* =====================================================================
@@ -1038,6 +1433,18 @@ function ouvrirPave(j,l){
   const puces = $('#pave-puces'); puces.innerHTML='';
 
   const inscrire = v => { poser(j,l,v); fermerPave(); };
+
+  /* ce que valent les dés en cours, s'il y en a */
+  if(!partie.desCaches && desLances(partie)){
+    const s = scoreDe(partie, l, etatDes(partie).valeurs);
+    if(s!=null){
+      const b = el('button','puce calcule'+(s===0?' rien':''));
+      b.appendChild(document.createTextNode(s===0 ? 'Barrer (0)' : s+(s>1?' points':' point')));
+      b.appendChild(el('small',null, s===0 ? 'la combinaison n’y est pas' : 'd’après vos dés'));
+      b.onclick = ()=>inscrire(s);
+      puces.appendChild(b);
+    }
+  }
 
   if(l.type==='multiple'){
     for(let k=0;k<=Math.round(l.max/l.face);k++){
@@ -1062,10 +1469,13 @@ function ouvrirPave(j,l){
 
   $('#voile').hidden = false;
 }
-function fermerPave(){ $('#voile').hidden = true; saisie=null; }
+function fermerPave(){ $('#voile').hidden = true; saisie=null; planifierBot(); }
 
 function changerJoueur(sens){
+  if(botJoue) return;
   partie.tour = joueurSuivant(partie, joueurCourant(partie), sens);
+  reinitDes(partie); messageDes='';
+  sauverDiscret();
   rendrePartie();
 }
 
@@ -1073,6 +1483,8 @@ async function poser(j,l,valeur){
   const nouvelle = partie.scores[j][l.id]==null;
   dernierCoup = { j, id:l.id, avant: partie.scores[j][l.id] ?? null, label:l.label, tourAvant: joueurCourant(partie) };
   partie.scores[j][l.id] = valeur;
+  messageDes = '';
+  reinitDes(partie);
   /* on passe la main au joueur suivant après une case nouvellement remplie */
   if(nouvelle && partie.joueurs.length>1 && casesRestantes(partie)>0){
     partie.tour = joueurSuivant(partie, j, 1);
@@ -1090,6 +1502,7 @@ async function annulerDernier(){
   else partie.scores[j][lid] = avant;
   if(typeof tourAvant==='number') partie.tour = tourAvant;
   dernierCoup = null;
+  reinitDes(partie); messageDes=''; sauterAuto = true;
   partie.maj = Date.now();
   await Store.ecrire(parties);
   rendrePartie();
@@ -1190,7 +1603,10 @@ $('#btn-nouvelle').onclick = ()=>{
   optionsDe(brouillon.variante).forEach(o=>brouillon.options[o.id]=o.defaut);
   /* on repart avec les joueurs de la dernière partie */
   const vides = !brouillon.joueurs.some(n=>n.trim());
-  if(vides && Carnet.donnees.dernier.length) brouillon.joueurs = [...Carnet.donnees.dernier];
+  if(vides && Carnet.donnees.dernier.length){
+    brouillon.joueurs = [...Carnet.donnees.dernier];
+    brouillon.bots = [...(Carnet.donnees.derniersBots||[])];
+  }
   if(!brouillon.joueurs.length) brouillon.joueurs=['',''];
   $('#titre-appli').firstChild.nodeValue='Nouvelle partie';
   $('#sous-titre').textContent='Règle, joueurs, options';
@@ -1198,7 +1614,7 @@ $('#btn-nouvelle').onclick = ()=>{
 };
 $('#btn-ajout-joueur').onclick = ()=>{
   if(brouillon.joueurs.length>=8){ $('#erreur-creation').textContent='Huit joueurs au maximum.'; return; }
-  brouillon.joueurs.push(''); rendreCreation();
+  brouillon.joueurs.push(''); brouillon.bots.push(false); rendreCreation();
   const inputs = $('#liste-joueurs').querySelectorAll('input');
   inputs[inputs.length-1].focus();
 };
@@ -1209,7 +1625,7 @@ $('#btn-annuler').onclick = annulerDernier;
 $('#btn-classement').onclick = ()=>{ rendreFin(); montrer('fin'); };
 $('#btn-revenir-feuille').onclick = ()=>{ rendrePartie(); montrer('partie'); };
 $('#btn-rejouer').onclick = ()=>{
-  brouillon = { variante:partie.variante, joueurs:[...partie.joueurs], options:{...partie.options} };
+  brouillon = { variante:partie.variante, joueurs:[...partie.joueurs], bots:[...(partie.bots||[])], options:{...partie.options} };
   lancerPartie();
 };
 $('#btn-supprimer').onclick = async ()=>{
