@@ -294,6 +294,36 @@ tr.total-haut .lecture{font-family:var(--chiffres);font-weight:500;text-align:ce
 .badge.finie{background:rgba(19,26,46,.1);color:var(--encre)}
 .vide-msg{text-align:center;padding:26px 10px;opacity:.55;font-size:14px}
 
+/* ---------- barre du joueur en cours ---------- */
+.barre-joueurs{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.nav-j{
+  width:40px;height:40px;flex:0 0 40px;border-radius:10px;
+  border:1.5px solid var(--trait);background:var(--papier-clair);
+  display:grid;place-items:center;font-size:20px;line-height:1;
+}
+.nav-j:hover{border-color:var(--feutre)}
+.puces-joueurs{
+  display:flex;gap:8px;flex:1;overflow-x:auto;-webkit-overflow-scrolling:touch;
+  padding:2px;scrollbar-width:none;
+}
+.puces-joueurs::-webkit-scrollbar{display:none}
+.puce-j{
+  flex:0 0 auto;display:flex;align-items:center;gap:8px;
+  padding:8px 12px;border-radius:999px;border:1.5px solid var(--trait);
+  background:var(--papier-clair);white-space:nowrap;
+}
+.puce-j b{font-family:var(--display);font-weight:600;font-size:14px}
+.puce-j em{font-family:var(--chiffres);font-style:normal;font-size:13px;opacity:.6}
+.puce-j.encours{background:var(--feutre);border-color:var(--feutre);color:var(--papier-clair)}
+.puce-j.encours em{opacity:.85}
+.puce-j.meneur b::after{content:" ★";color:var(--moutarde)}
+.puce-j.fini{opacity:.5}
+
+tr.reste td,tr.reste .col-cat{background:rgba(232,179,60,.16)}
+tr.reste .cat{font-weight:600}
+tr.reste .lecture{font-family:var(--chiffres);font-weight:500;text-align:center;font-size:19px}
+tr.reste .lecture.ok{color:var(--feutre);font-weight:600}
+
 .note{font-size:12.5px;opacity:.6;margin-top:14px}
 .erreur{color:var(--biffe);font-size:13.5px;font-weight:600;margin:8px 0 0;min-height:18px}
 </style>
@@ -353,6 +383,7 @@ tr.total-haut .lecture{font-family:var(--chiffres);font-weight:500;text-align:ce
 
 <!-- ========== PARTIE ========== -->
 <section class="ecran" id="ecran-partie">
+  <div class="barre-joueurs" id="barre-joueurs"></div>
   <div class="feuille-enveloppe">
     <table class="feuille"><thead id="tete-feuille"></thead><tbody id="corps-feuille"></tbody></table>
   </div>
@@ -636,6 +667,27 @@ function casesRestantes(p){
   p.joueurs.forEach((_,j)=>toutesLignes(p).forEach(l=>{ if(p.scores[j][l.id]==null) n++; }));
   return n;
 }
+function casesRestantesJoueur(p,j){
+  return toutesLignes(p).filter(l=>p.scores[j][l.id]==null).length;
+}
+/* ce qu'il reste à marquer en section haute pour décrocher le bonus */
+function resteBonus(p,j){
+  return Math.max(0, VARIANTES[p.variante].seuilBonus - totalHaut(p,j));
+}
+/* le joueur affiché ; on sécurise les parties enregistrées avant cette version */
+function joueurCourant(p){
+  if(typeof p.tour!=='number' || p.tour<0 || p.tour>=p.joueurs.length) p.tour = 0;
+  return p.tour;
+}
+/* joueur suivant qui a encore des cases libres (sinon on tourne simplement) */
+function joueurSuivant(p,depuis,sens){
+  const n = p.joueurs.length;
+  for(let k=1;k<=n;k++){
+    const j = (depuis + sens*k + n*k) % n;
+    if(casesRestantesJoueur(p,j)>0) return j;
+  }
+  return (depuis + sens + n) % n;
+}
 /* En ordre imposé, seule la prochaine case vide de chaque joueur est ouverte. */
 function prochaineCase(p,j){
   const l = toutesLignes(p).find(x=>p.scores[j][x.id]==null);
@@ -753,6 +805,7 @@ async function lancerPartie(){
     id:id(), variante:brouillon.variante, joueurs:noms,
     options:{...brouillon.options},
     scores:noms.map(()=>({})),
+    tour:0,
     cree:Date.now(), maj:Date.now()
   };
   parties.push(p); await Store.ecrire(parties);
@@ -765,24 +818,47 @@ async function lancerPartie(){
    ===================================================================== */
 function rendrePartie(){
   const p = partie, v = VARIANTES[p.variante];
+  const jc = joueurCourant(p);
   $('#titre-appli').firstChild.nodeValue = v.nom;
-  $('#sous-titre').textContent = p.joueurs.length+' joueurs · '+casesRestantes(p)+' cases à remplir';
+  $('#sous-titre').textContent = p.joueurs[jc]+' · '+casesRestantesJoueur(p,jc)+' case'+(casesRestantesJoueur(p,jc)>1?'s':'')+' à remplir';
 
   const meneur = p.joueurs.length>1 ? classement(p)[0] : null;
   const avance = meneur && meneur.total>0 ? meneur.j : -1;
 
-  /* en-tête */
+  /* barre des joueurs : on choisit qui est à l'écran */
+  const barre = $('#barre-joueurs'); barre.innerHTML='';
+  if(p.joueurs.length>1){
+    const prec = el('button','nav-j','‹');
+    prec.setAttribute('aria-label','Joueur précédent');
+    prec.onclick = ()=>changerJoueur(-1);
+    barre.appendChild(prec);
+    const bande = el('div','puces-joueurs');
+    p.joueurs.forEach((nom,j)=>{
+      const fini = casesRestantesJoueur(p,j)===0;
+      const b = el('button','puce-j'+(j===jc?' encours':'')+(j===avance?' meneur':'')+(fini&&j!==jc?' fini':''));
+      b.setAttribute('aria-pressed', String(j===jc));
+      b.appendChild(el('b',null,nom));
+      b.appendChild(el('em',null,String(totalGeneral(p,j))));
+      b.onclick = ()=>{ p.tour=j; rendrePartie(); };
+      bande.appendChild(b);
+    });
+    barre.appendChild(bande);
+    const suiv = el('button','nav-j','›');
+    suiv.setAttribute('aria-label','Joueur suivant');
+    suiv.onclick = ()=>changerJoueur(1);
+    barre.appendChild(suiv);
+  }
+
+  /* en-tête : uniquement le joueur en cours */
   const thead = $('#tete-feuille'); thead.innerHTML='';
   const tr = el('tr');
   const th0 = el('th','col-cat');
   th0.appendChild(el('div','cat','Catégorie'));
   tr.appendChild(th0);
-  p.joueurs.forEach((nom,j)=>{
-    const th = el('th','tete-joueur'+(j===avance?' leader':''));
-    th.appendChild(el('div','nom',nom));
-    th.appendChild(el('div','cumul',String(totalGeneral(p,j))));
-    tr.appendChild(th);
-  });
+  const th = el('th','tete-joueur'+(jc===avance?' leader':''));
+  th.appendChild(el('div','nom',p.joueurs[jc]));
+  th.appendChild(el('div','cumul',String(totalGeneral(p,jc))));
+  tr.appendChild(th);
   thead.appendChild(tr);
 
   /* corps */
@@ -791,7 +867,7 @@ function rendrePartie(){
   const blocTitre = (txt)=>{
     const r = el('tr','entete-bloc');
     const c = el('td','col-cat',txt); r.appendChild(c);
-    const d = el('td'); d.colSpan = p.joueurs.length; r.appendChild(d);
+    r.appendChild(el('td'));
     tb.appendChild(r);
   };
   const vedettes = ['yahtzee','yatzy','maxi','yams'];
@@ -803,35 +879,46 @@ function rendrePartie(){
     cat.appendChild(document.createTextNode(l.label));
     if(l.type==='fixe') cat.appendChild(el('span','val',l.valeur+' pts'));
     c.appendChild(cat); r.appendChild(c);
-    p.joueurs.forEach((nom,j)=>{
-      const td = el('td');
-      const val = p.scores[j][l.id];
-      const ouverte = caseOuverte(p,j,l);
-      const b = el('button','case'+(val==null?' vide':(val===0?' zero':' remplie'))+(ouverte?'':' verrouillee'));
-      b.textContent = val==null ? '' : String(val);
-      b.disabled = !ouverte;
-      b.setAttribute('aria-label', nom+' — '+l.label+' — '+(val==null?(ouverte?'vide':'verrouillée'):val+' points'));
-      if(ouverte) b.onclick = ()=>ouvrirPave(j,l);
-      td.appendChild(b); r.appendChild(td);
-    });
+    const j = jc, nom = p.joueurs[j];
+    const td = el('td');
+    const val = p.scores[j][l.id];
+    const ouverte = caseOuverte(p,j,l);
+    const b = el('button','case'+(val==null?' vide':(val===0?' zero':' remplie'))+(ouverte?'':' verrouillee'));
+    b.textContent = val==null ? '' : String(val);
+    b.disabled = !ouverte;
+    b.setAttribute('aria-label', nom+' — '+l.label+' — '+(val==null?(ouverte?'vide':'verrouillée'):val+' points'));
+    if(ouverte) b.onclick = ()=>ouvrirPave(j,l);
+    td.appendChild(b); r.appendChild(td);
     tb.appendChild(r);
   };
   const ligneTotal = (label, fn, cls, marqueBonus)=>{
     const r = el('tr', cls||'total');
     const c = el('td','col-cat'); c.appendChild(el('div','cat',label)); r.appendChild(c);
-    p.joueurs.forEach((_,j)=>{
-      const td = el('td','lecture');
-      const val = fn(j);
-      td.textContent = val;
-      if(marqueBonus && val>0) td.className='lecture bonus-atteint';
-      r.appendChild(td);
-    });
+    const td = el('td','lecture');
+    const val = fn(jc);
+    td.textContent = val;
+    if(marqueBonus && val>0) td.className='lecture bonus-atteint';
+    r.appendChild(td);
     tb.appendChild(r);
   };
 
   blocTitre('Section haute');
   v.haute.forEach(l=>ligneSaisie(l,'haut'));
   ligneTotal('Sous-total', j=>totalHaut(p,j));
+  /* reste à faire pour décrocher le bonus */
+  (()=>{
+    const r = el('tr','total reste');
+    const c = el('td','col-cat');
+    c.appendChild(el('div','cat','Reste à faire'));
+    c.querySelector('.cat').appendChild(el('span','val','pour le bonus'));
+    r.appendChild(c);
+    const manque = resteBonus(p,jc);
+    const td = el('td','lecture'+(manque===0?' ok':''));
+    td.textContent = manque===0 ? 'Bonus acquis' : '−'+manque;
+    if(manque===0) td.style.fontSize='14px';
+    r.appendChild(td);
+    tb.appendChild(r);
+  })();
   ligneTotal('Bonus ('+v.seuilBonus+' → '+v.valeurBonus+')', j=>bonus(p,j), 'total', true);
   ligneTotal('Total haut', j=>totalHaut(p,j)+bonus(p,j), 'total total-haut');
 
@@ -841,12 +928,13 @@ function rendrePartie(){
   ligneTotal('Total', j=>totalGeneral(p,j), 'grand-total');
 
   const reste = casesRestantes(p);
+  const resteJ = casesRestantesJoueur(p,jc);
   const rappels = [];
   if(reste===0) rappels.push('Partie terminée. Consultez le classement.');
   else {
     rappels.push(p.options.ordreImpose
-      ? 'Ordre imposé : seule la prochaine case de chaque joueur est ouverte. Il reste '+reste+' case'+(reste>1?'s':'')+'.'
-      : 'Touchez une case pour inscrire un score. Il reste '+reste+' case'+(reste>1?'s':'')+'.');
+      ? 'Ordre imposé : seule la prochaine case est ouverte. Il reste '+resteJ+' case'+(resteJ>1?'s':'')+' à '+p.joueurs[jc]+' ('+reste+' en tout).'
+      : 'Touchez une case pour inscrire le score de '+p.joueurs[jc]+'. Il lui reste '+resteJ+' case'+(resteJ>1?'s':'')+' ('+reste+' en tout).');
     if(p.options.jokerObligatoire) rappels.push('Joker obligatoire : un Yahtzee refait va d\u2019abord dans sa case de section haute, si elle est libre.');
   }
   $('#note-partie').textContent = rappels.join(' ');
@@ -892,9 +980,19 @@ function ouvrirPave(j,l){
 }
 function fermerPave(){ $('#voile').hidden = true; saisie=null; }
 
+function changerJoueur(sens){
+  partie.tour = joueurSuivant(partie, joueurCourant(partie), sens);
+  rendrePartie();
+}
+
 async function poser(j,l,valeur){
-  dernierCoup = { j, id:l.id, avant: partie.scores[j][l.id] ?? null, label:l.label };
+  const nouvelle = partie.scores[j][l.id]==null;
+  dernierCoup = { j, id:l.id, avant: partie.scores[j][l.id] ?? null, label:l.label, tourAvant: joueurCourant(partie) };
   partie.scores[j][l.id] = valeur;
+  /* on passe la main au joueur suivant après une case nouvellement remplie */
+  if(nouvelle && partie.joueurs.length>1 && casesRestantes(partie)>0){
+    partie.tour = joueurSuivant(partie, j, 1);
+  }
   partie.maj = Date.now();
   await Store.ecrire(parties);
   rendrePartie();
@@ -903,9 +1001,10 @@ async function poser(j,l,valeur){
 
 async function annulerDernier(){
   if(!dernierCoup) return;
-  const {j,id:lid,avant} = dernierCoup;
+  const {j,id:lid,avant,tourAvant} = dernierCoup;
   if(avant==null) delete partie.scores[j][lid];
   else partie.scores[j][lid] = avant;
+  if(typeof tourAvant==='number') partie.tour = tourAvant;
   dernierCoup = null;
   partie.maj = Date.now();
   await Store.ecrire(parties);
