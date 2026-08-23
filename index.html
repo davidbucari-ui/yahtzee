@@ -294,6 +294,22 @@ tr.total-haut .lecture{font-family:var(--chiffres);font-weight:500;text-align:ce
 .badge.finie{background:rgba(19,26,46,.1);color:var(--encre)}
 .vide-msg{text-align:center;padding:26px 10px;opacity:.55;font-size:14px}
 
+/* ---------- carnet de joueurs ---------- */
+.carnet{margin:2px 0 12px}
+.carnet .etiquette{margin-bottom:8px}
+.carnet-liste{display:flex;flex-wrap:wrap;gap:8px}
+.puce-nom{
+  display:flex;align-items:center;gap:6px;padding:7px 8px 7px 12px;
+  border:1.5px solid var(--trait);border-radius:999px;background:var(--papier-clair);
+  font-size:14px;font-weight:600;
+}
+.puce-nom:hover{border-color:var(--feutre)}
+.puce-nom[disabled]{opacity:.4}
+.puce-nom .x{
+  font-size:15px;line-height:1;opacity:.45;padding:2px 5px;border-radius:50%;
+}
+.puce-nom .x:hover{opacity:1;color:var(--biffe);background:rgba(194,69,45,.12)}
+
 /* ---------- barre du joueur en cours ---------- */
 .barre-joueurs{display:flex;align-items:center;gap:8px;margin-bottom:12px}
 .nav-j{
@@ -368,6 +384,7 @@ tr.reste .lecture.ok{color:var(--feutre);font-weight:600}
 
   <div class="etiquette" style="margin-top:22px">2 — Joueurs</div>
   <div id="liste-joueurs"></div>
+  <div id="carnet-joueurs"></div>
   <button class="lien" id="btn-ajout-joueur">+ Ajouter un joueur</button>
 
   <div class="etiquette" style="margin-top:22px">3 — Options</div>
@@ -616,6 +633,41 @@ const Store = {
   }
 };
 
+/* ---- carnet de joueurs : les noms déjà utilisés, gardés d'une partie à l'autre ---- */
+const CLE_CARNET = 'yatzee:joueurs';
+const Carnet = {
+  donnees:{noms:[], dernier:[]},
+  async lire(){
+    let d = null;
+    if(window.storage){
+      try{ const r = await window.storage.get(CLE_CARNET); d = r ? JSON.parse(r.value) : null; }catch(e){}
+    } else {
+      try{ d = JSON.parse(window.localStorage.getItem(CLE_CARNET)); }catch(e){}
+    }
+    if(d && Array.isArray(d.noms)) this.donnees = {noms:d.noms, dernier:Array.isArray(d.dernier)?d.dernier:[]};
+    return this.donnees;
+  },
+  async ecrire(){
+    const texte = JSON.stringify(this.donnees);
+    if(window.storage){
+      try{ await window.storage.set(CLE_CARNET, texte); }catch(e){}
+    } else {
+      try{ window.localStorage.setItem(CLE_CARNET, texte); }catch(e){}
+    }
+  },
+  async retenir(dernier, connus){
+    this.donnees.dernier = [...dernier];
+    const vus = new Set(connus.map(n=>n.toLowerCase()));
+    this.donnees.noms = [...connus, ...this.donnees.noms.filter(n=>!vus.has(n.toLowerCase()))].slice(0,20);
+    await this.ecrire();
+  },
+  async oublier(nom){
+    this.donnees.noms = this.donnees.noms.filter(n=>n!==nom);
+    this.donnees.dernier = this.donnees.dernier.filter(n=>n!==nom);
+    await this.ecrire();
+  }
+};
+
 /* =====================================================================
    3. ÉTAT
    ===================================================================== */
@@ -780,6 +832,36 @@ function rendreCreation(){
     boxJ.appendChild(l);
   });
 
+  /* carnet : les joueurs déjà rencontrés, à ajouter d'un geste */
+  const boxC = $('#carnet-joueurs'); boxC.innerHTML='';
+  const dejaPris = new Set(brouillon.joueurs.map(n=>n.trim().toLowerCase()).filter(Boolean));
+  const connus = Carnet.donnees.noms.filter(n=>n.trim());
+  if(connus.length){
+    const bloc = el('div','carnet');
+    bloc.appendChild(el('div','etiquette','Joueurs habituels'));
+    const liste = el('div','carnet-liste');
+    connus.forEach(nom=>{
+      const chip = el('div','puce-nom');
+      const b = el('button','nom',nom);
+      const utilise = dejaPris.has(nom.toLowerCase());
+      if(utilise){ b.disabled = true; chip.setAttribute('disabled',''); }
+      b.onclick = ()=>{
+        const libre = brouillon.joueurs.findIndex(n=>!n.trim());
+        if(libre>=0) brouillon.joueurs[libre] = nom;
+        else if(brouillon.joueurs.length<8) brouillon.joueurs.push(nom);
+        else { $('#erreur-creation').textContent='Huit joueurs au maximum.'; return; }
+        rendreCreation();
+      };
+      const x = el('button','x','×');
+      x.setAttribute('aria-label','Oublier '+nom);
+      x.onclick = async ()=>{ await Carnet.oublier(nom); rendreCreation(); };
+      chip.appendChild(b); chip.appendChild(x);
+      liste.appendChild(chip);
+    });
+    bloc.appendChild(liste);
+    boxC.appendChild(bloc);
+  }
+
   const boxO = $('#liste-options'); boxO.innerHTML='';
   optionsDe(brouillon.variante).forEach(o=>{
       const lab = el('label','option');
@@ -808,6 +890,8 @@ async function lancerPartie(){
     tour:0,
     cree:Date.now(), maj:Date.now()
   };
+  const saisis = brouillon.joueurs.map(n=>n.trim()).filter(Boolean);
+  if(saisis.length) await Carnet.retenir(noms, saisis);
   parties.push(p); await Store.ecrire(parties);
   partie = p; dernierCoup = null;
   rendrePartie(); montrer('partie');
@@ -1104,6 +1188,9 @@ $('#btn-nouvelle').onclick = ()=>{
   const v = VARIANTES[brouillon.variante];
   brouillon.options = {};
   optionsDe(brouillon.variante).forEach(o=>brouillon.options[o.id]=o.defaut);
+  /* on repart avec les joueurs de la dernière partie */
+  const vides = !brouillon.joueurs.some(n=>n.trim());
+  if(vides && Carnet.donnees.dernier.length) brouillon.joueurs = [...Carnet.donnees.dernier];
   if(!brouillon.joueurs.length) brouillon.joueurs=['',''];
   $('#titre-appli').firstChild.nodeValue='Nouvelle partie';
   $('#sous-titre').textContent='Règle, joueurs, options';
@@ -1150,7 +1237,7 @@ function messageTransfert(txt, ok){
 
 $('#btn-export').onclick = ()=>{
   if(!parties.length){ messageTransfert('Aucune partie à exporter pour l’instant.', false); return; }
-  const paquet = { appli:'bloc-de-score', version:1, exporte:Date.now(), parties };
+  const paquet = { appli:'bloc-de-score', version:1, exporte:Date.now(), parties, carnet:Carnet.donnees };
   const url = URL.createObjectURL(new Blob([JSON.stringify(paquet,null,2)],{type:'application/json'}));
   const a = document.createElement('a');
   const d = new Date();
@@ -1179,6 +1266,12 @@ $('#champ-import').onchange = async e => {
     if(i===-1){ parties.push(p); ajoutees++; }
     else if((p.maj||0) > (parties[i].maj||0)){ parties[i]=p; majs++; }
   });
+  if(paquet.carnet && Array.isArray(paquet.carnet.noms)){
+    const vus = new Set(Carnet.donnees.noms.map(n=>n.toLowerCase()));
+    Carnet.donnees.noms = [...Carnet.donnees.noms, ...paquet.carnet.noms.filter(n=>n && !vus.has(n.toLowerCase()))].slice(0,20);
+    if(!Carnet.donnees.dernier.length && Array.isArray(paquet.carnet.dernier)) Carnet.donnees.dernier = paquet.carnet.dernier;
+    await Carnet.ecrire();
+  }
   await Store.ecrire(parties);
   rendreAccueil();
   messageTransfert(ajoutees+' partie(s) ajoutée(s), '+majs+' mise(s) à jour.', true);
@@ -1189,6 +1282,7 @@ $('#champ-import').onchange = async e => {
    ===================================================================== */
 (async ()=>{
   parties = await Store.lire();
+  await Carnet.lire();
   rendreAccueil();
   montrer('accueil');
 })();
