@@ -469,6 +469,11 @@ tr.cliquable:active td,tr.cliquable:active .col-cat{background-image:linear-grad
 .puce-j.encours{box-shadow:0 2px 0 var(--moutarde)}
 .nav-j{min-width:44px;min-height:44px}
 
+/* la case qui vient d'être remplie reste en évidence pendant la pause */
+.case.flash{animation:case-flash 2s ease-out both}
+@keyframes case-flash{0%{background:rgba(232,179,60,.75)}55%{background:rgba(232,179,60,.45)}100%{background:rgba(232,179,60,.12)}}
+@media (prefers-reduced-motion:reduce){.case.flash{animation:none;background:rgba(232,179,60,.45)}}
+
 /* confirmation après chaque score */
 .toast{
   position:fixed;left:50%;transform:translateX(-50%);z-index:40;
@@ -942,7 +947,7 @@ function montrer(nom){
   document.querySelectorAll('.ecran').forEach(s=>s.classList.remove('actif'));
   $('#ecran-'+nom).classList.add('actif');
   const enPartie = (nom==='partie');
-  if(!enPartie) cacherToast();
+  if(!enPartie){ cacherToast(); annulerBascule(); }
   $('#btn-retour').classList.toggle('cache', nom!=='partie' && nom!=='fin');
   $('#btn-annuler').classList.toggle('cache', !enPartie || !dernierCoup);
   $('#btn-regles').classList.toggle('cache', nom!=='partie' && nom!=='creation');
@@ -1192,7 +1197,7 @@ function rendreDes(){
     b.onclick = ()=>{ p.desCaches=false; rendrePartie(); };
     hote.appendChild(b); return;
   }
-  const jc = joueurCourant(p), d = etatDes(p), bot = estBot(p,jc);
+  const jc = joueurAffiche(p), d = etatDes(p), bot = estBot(p,jc), fige = vueFigee!==null;
   const bloc = el('div','panneau-des');
 
   const tete = el('div','des-tete');
@@ -1216,7 +1221,7 @@ function rendreDes(){
     const b = el('button','de-jeu'+(v===0?' vierge':'')+((d.gardes[i]&&d.lancers>0)?' garde':''));
     if(v>0) b.appendChild(faireDe(v));
     b.setAttribute('aria-label','Dé '+(i+1)+(v?' — '+v:' — non lancé')+(d.gardes[i]?' — gardé':''));
-    b.disabled = d.lancers===0 || d.lancers>=3 || bot || botJoue;
+    b.disabled = d.lancers===0 || d.lancers>=3 || bot || botJoue || fige;
     b.onclick = async ()=>{ d.gardes[i]=!d.gardes[i]; await sauverDiscret(); rendrePartie(); };
     rangee.appendChild(b);
   });
@@ -1227,7 +1232,7 @@ function rendreDes(){
     const auto = p.botAuto!==false;
     const b = el('button','btn vert',
       botJoue ? p.joueurs[jc]+' joue…' : (auto ? 'À '+p.joueurs[jc]+' de jouer…' : 'Faire jouer '+p.joueurs[jc]));
-    b.disabled = botJoue || auto;
+    b.disabled = botJoue || auto || fige;
     b.onclick = jouerBot;
     actions.appendChild(b);
   } else {
@@ -1235,7 +1240,7 @@ function rendreDes(){
       d.lancers===0 ? 'Lancer les dés'
       : d.lancers<3 ? 'Relancer ('+(3-d.lancers)+' restant'+((3-d.lancers)>1?'s':'')+')'
       : 'Plus de lancer');
-    b.disabled = d.lancers>=3;
+    b.disabled = d.lancers>=3 || fige;
     b.onclick = lancerEtAnimer;
     actions.appendChild(b);
     if(d.lancers>0){
@@ -1257,6 +1262,25 @@ function rendreDes(){
 
 let messageDes = '';
 let botJoue = false;
+
+/* Temporisation avant de passer la main : le tour avance tout de suite dans les
+   données (donc sauvegardé), mais l'écran reste 2 s sur le joueur qui vient de jouer. */
+const DELAI_BASCULE = 2000;
+let vueFigee = null;           // index du joueur gardé à l'écran, ou null
+let minuteurBascule = null;
+function joueurAffiche(p){ return vueFigee!==null ? vueFigee : joueurCourant(p); }
+function figerVue(j){
+  clearTimeout(minuteurBascule);
+  vueFigee = j;
+  minuteurBascule = setTimeout(finBascule, DELAI_BASCULE);
+}
+function annulerBascule(){ clearTimeout(minuteurBascule); minuteurBascule = null; vueFigee = null; }
+function finBascule(){
+  minuteurBascule = null;
+  if(vueFigee===null) return;
+  vueFigee = null;
+  if(partie && $('#ecran-partie').classList.contains('actif')){ rendrePartie(); planifierBot(); }
+}
 
 async function sauverDiscret(){ await Store.ecrire(parties); }
 
@@ -1334,7 +1358,7 @@ let sauterAuto = false;      /* après un « Annuler », on laisse la main à l'
 function planifierBot(delai){
   clearTimeout(minuteurBot);
   const p = partie;
-  if(!p || botJoue) return;
+  if(!p || botJoue || vueFigee!==null) return;
   if(sauterAuto){ sauterAuto = false; return; }
   if(p.botAuto===false) return;
   if(!$('#ecran-partie').classList.contains('actif')) return;
@@ -1389,7 +1413,7 @@ async function jouerBot(){
    ===================================================================== */
 function rendrePartie(){
   const p = partie, v = VARIANTES[p.variante];
-  const jc = joueurCourant(p);
+  const jc = joueurAffiche(p), fige = vueFigee!==null;
   $('#titre-appli').firstChild.nodeValue = v.nom;
   $('#sous-titre').textContent = p.joueurs[jc]+' · '+casesRestantesJoueur(p,jc)+' case'+(casesRestantesJoueur(p,jc)>1?'s':'')+' à remplir';
 
@@ -1411,7 +1435,7 @@ function rendrePartie(){
       b.appendChild(el('b',null,nom));
       if(estBot(p,j)) b.appendChild(el('i','tag','IA'));
       b.appendChild(el('em',null,String(totalGeneral(p,j))));
-      b.disabled = botJoue;
+      b.disabled = botJoue || fige;
       b.onclick = ()=>{ if(j===p.tour) return; p.tour=j; reinitDes(p); messageDes=''; sauverDiscret(); rendrePartie(); };
       bande.appendChild(b);
     });
@@ -1461,12 +1485,12 @@ function rendrePartie(){
     const ouverte = caseOuverte(p,j,l);
     /* proposition calculée à partir des dés lancés */
     const sugg = (val==null && ouverte && !p.desCaches && desLances(p)) ? scoreDe(p,l,etatDes(p).valeurs) : null;
-    const b = el('button','case'+(val==null?(sugg==null?' vide':''):(val===0?' zero':' remplie'))+(ouverte?'':' verrouillee'));
+    const b = el('button','case'+(val==null?(sugg==null?' vide':''):(val===0?' zero':' remplie'))+(ouverte?'':' verrouillee')+(fige && dernierCoup && dernierCoup.j===j && dernierCoup.id===l.id ? ' flash':''));
     b.textContent = val==null ? '' : String(val);
     if(val==null && sugg!=null) b.appendChild(el('span','sugg'+(sugg===0?' nul':''), String(sugg)));
-    b.disabled = !ouverte || botJoue;
+    b.disabled = !ouverte || botJoue || fige;
     b.setAttribute('aria-label', nom+' — '+l.label+' — '+(val==null?(ouverte?'vide':'verrouillée'):val+' points'));
-    if(ouverte && !botJoue){ r.classList.add('cliquable'); r.onclick = ()=>ouvrirPave(j,l); }
+    if(ouverte && !botJoue && !fige){ r.classList.add('cliquable'); r.onclick = ()=>ouvrirPave(j,l); }
     td.appendChild(b); r.appendChild(td);
     tb.appendChild(r);
   };
@@ -1601,7 +1625,7 @@ function ouvrirPave(j,l){
 function fermerPave(){ $('#voile').hidden = true; saisie=null; planifierBot(); }
 
 function changerJoueur(sens){
-  if(botJoue) return;
+  if(botJoue || vueFigee!==null) return;
   partie.tour = joueurSuivant(partie, joueurCourant(partie), sens);
   reinitDes(partie); messageDes='';
   sauverDiscret();
@@ -1617,6 +1641,7 @@ async function poser(j,l,valeur){
   /* on passe la main au joueur suivant après une case nouvellement remplie */
   if(nouvelle && partie.joueurs.length>1 && casesRestantes(partie)>0){
     partie.tour = joueurSuivant(partie, j, 1);
+    if(partie.tour!==j) figerVue(j);
   }
   partie.maj = Date.now();
   await Store.ecrire(parties);
@@ -1648,7 +1673,7 @@ function cacherToast(){
 
 async function annulerDernier(){
   if(!dernierCoup) return;
-  cacherToast();
+  cacherToast(); annulerBascule();
   const {j,id:lid,avant,tourAvant} = dernierCoup;
   if(avant==null) delete partie.scores[j][lid];
   else partie.scores[j][lid] = avant;
