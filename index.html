@@ -438,15 +438,86 @@ tr.reste .lecture.ok{color:var(--feutre);font-weight:600}
 
 .note{font-size:12.5px;opacity:.6;margin-top:14px}
 .erreur{color:var(--biffe);font-size:13.5px;font-weight:600;margin:8px 0 0;min-height:18px}
+
+/* =====================================================================
+   ERGONOMIE & LISIBILITÉ
+   ===================================================================== */
+/* textes secondaires plus contrastés */
+.etiquette{opacity:.72;font-size:11.5px}
+.note{opacity:.75;font-size:13px}
+
+/* toute la ligne est une cible tactile */
+tr.cliquable{cursor:pointer}
+tr.cliquable:hover td,tr.cliquable:hover .col-cat{background-image:linear-gradient(rgba(31,111,92,.07),rgba(31,111,92,.07))}
+tr.cliquable:active td,tr.cliquable:active .col-cat{background-image:linear-gradient(rgba(31,111,92,.16),rgba(31,111,92,.16))}
+
+/* une case vide ouverte se lit comme « à remplir » */
+.case.vide:not(.verrouillee)::after{
+  content:"+";opacity:.34;font-weight:400;font-size:calc(var(--f2,21px)*.85);color:var(--feutre-fonce);
+}
+
+/* retour tactile */
+.btn,.puce,.variante,.partie,.puce-j,.nav-j,.bascule,.btn-bar{transition:transform .08s ease,background-color .15s,border-color .15s}
+.btn:active,.puce:active,.variante:active,.partie:active,.puce-j:active,.nav-j:active,.bascule:active,.btn-bar:active{transform:scale(.97)}
+@media (prefers-reduced-motion:reduce){
+  .btn,.puce,.variante,.partie,.puce-j,.nav-j,.bascule,.btn-bar{transition:none}
+  .btn:active,.puce:active,.variante:active,.partie:active,.puce-j:active,.nav-j:active,.bascule:active,.btn-bar:active{transform:none}
+}
+
+/* onglets joueurs : cibles plus grandes, actif bien visible */
+.puce-j{min-height:44px}
+.puce-j.encours{box-shadow:0 2px 0 var(--moutarde)}
+.nav-j{min-width:44px;min-height:44px}
+
+/* confirmation après chaque score */
+.toast{
+  position:fixed;left:50%;transform:translateX(-50%);z-index:40;
+  bottom:calc(84px + env(safe-area-inset-bottom));
+  width:calc(100% - 24px);max-width:520px;
+  display:flex;align-items:center;gap:12px;
+  background:var(--encre);color:var(--papier-clair);
+  border-radius:12px;padding:10px 10px 10px 16px;
+  box-shadow:0 8px 24px rgba(19,26,46,.28);
+  font-size:14.5px;line-height:1.3;
+}
+.toast[hidden]{display:none}
+.toast.visible{animation:toast-in .22s cubic-bezier(.2,.8,.3,1)}
+@keyframes toast-in{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}
+@media (prefers-reduced-motion:reduce){.toast.visible{animation:none}}
+.toast-txt{flex:1}
+.toast-act{
+  flex:0 0 auto;min-height:40px;padding:0 14px;border-radius:9px;
+  border:1.5px solid rgba(245,243,236,.4);color:var(--moutarde);font-weight:600;font-size:14px;
+}
+.toast-act:hover{background:rgba(245,243,236,.1)}
+
+/* transfert d'appareil replié par défaut */
+details.carte>summary{cursor:pointer;list-style:none;margin-bottom:0;display:flex;align-items:center;justify-content:space-between;min-height:32px}
+details.carte>summary::-webkit-details-marker{display:none}
+details.carte>summary::after{content:"+";font-size:18px;opacity:.7}
+details.carte[open]>summary{margin-bottom:10px}
+details.carte[open]>summary::after{content:"–"}
+
+/* téléphone : boutons du haut réduits à l'icône, formulaire qui ne déborde plus */
+@media (max-width:560px){
+  .btn-bar .lib{display:none}
+  .btn-bar{min-width:42px;min-height:38px;padding:6px 12px;font-size:17px;line-height:1}
+  .appbar{gap:8px}
+  .ligne-joueur{gap:6px}
+  .ligne-joueur input[type=text]{min-width:0}
+  .ligne-joueur .rang{width:14px}
+  .bascule{padding:0 9px}
+  .toast{bottom:calc(76px + env(safe-area-inset-bottom))}
+}
 </style>
 </head>
 <body>
 
 <header class="appbar">
-  <button class="btn-bar cache" id="btn-retour">‹ Parties</button>
+  <button class="btn-bar cache" id="btn-retour" aria-label="Retour aux parties"><span aria-hidden="true">‹</span><span class="lib"> Parties</span></button>
   <h1 id="titre-appli">Bloc de score<span class="sous" id="sous-titre">Yahtzee et ses variantes</span></h1>
-  <button class="btn-bar cache" id="btn-annuler">Annuler</button>
-  <button class="btn-bar cache" id="btn-regles">Règles</button>
+  <button class="btn-bar cache" id="btn-annuler" aria-label="Annuler le dernier score"><span aria-hidden="true">↶</span><span class="lib"> Annuler</span></button>
+  <button class="btn-bar cache" id="btn-regles" aria-label="Règles du jeu"><span aria-hidden="true">?</span><span class="lib"> Règles</span></button>
 </header>
 
 <main>
@@ -456,8 +527,8 @@ tr.reste .lecture.ok{color:var(--feutre);font-weight:600}
   <h2 class="titre-section">Vos parties</h2>
   <p class="chapo">Reprenez une partie en cours ou lancez-en une nouvelle. Tout reste sur cet appareil.</p>
   <div id="liste-parties"></div>
-  <div class="carte" id="bloc-transfert">
-    <div class="etiquette">Changer d’appareil</div>
+  <details class="carte" id="bloc-transfert">
+    <summary class="etiquette">Changer d’appareil</summary>
     <p style="margin:0 0 12px;font-size:13.5px;opacity:.7">Exportez vos parties dans un fichier, puis importez-le sur l’autre appareil.</p>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
       <button class="btn fantome" id="btn-export" style="flex:1;padding:12px">Exporter</button>
@@ -465,7 +536,7 @@ tr.reste .lecture.ok{color:var(--feutre);font-weight:600}
     </div>
     <input type="file" id="champ-import" accept="application/json,.json" hidden>
     <p class="erreur" id="msg-transfert"></p>
-  </div>
+  </details>
   <div class="principal"><div class="inner">
     <button class="btn vert" id="btn-nouvelle">Nouvelle partie</button>
   </div></div>
@@ -530,6 +601,11 @@ tr.reste .lecture.ok{color:var(--feutre);font-weight:600}
     <button class="btn" id="btn-ferme-regles">Retour</button>
   </div></div>
 </section>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden>
+  <span class="toast-txt" id="toast-txt"></span>
+  <button class="toast-act" id="toast-annuler">Annuler</button>
+</div>
 
 <!-- ========== PAVÉ DE SAISIE ========== -->
 <div class="voile" id="voile" hidden>
@@ -866,6 +942,7 @@ function montrer(nom){
   document.querySelectorAll('.ecran').forEach(s=>s.classList.remove('actif'));
   $('#ecran-'+nom).classList.add('actif');
   const enPartie = (nom==='partie');
+  if(!enPartie) cacherToast();
   $('#btn-retour').classList.toggle('cache', nom!=='partie' && nom!=='fin');
   $('#btn-annuler').classList.toggle('cache', !enPartie || !dernierCoup);
   $('#btn-regles').classList.toggle('cache', nom!=='partie' && nom!=='creation');
@@ -1339,6 +1416,7 @@ function rendrePartie(){
       bande.appendChild(b);
     });
     barre.appendChild(bande);
+    requestAnimationFrame(()=>{ const a=bande.querySelector('.encours'); if(a) bande.scrollTo({left:a.offsetLeft-(bande.clientWidth-a.offsetWidth)/2, behavior:'smooth'}); });
     const suiv = el('button','nav-j','›');
     suiv.setAttribute('aria-label','Joueur suivant');
     suiv.onclick = ()=>changerJoueur(1);
@@ -1388,7 +1466,7 @@ function rendrePartie(){
     if(val==null && sugg!=null) b.appendChild(el('span','sugg'+(sugg===0?' nul':''), String(sugg)));
     b.disabled = !ouverte || botJoue;
     b.setAttribute('aria-label', nom+' — '+l.label+' — '+(val==null?(ouverte?'vide':'verrouillée'):val+' points'));
-    if(ouverte) b.onclick = ()=>ouvrirPave(j,l);
+    if(ouverte && !botJoue){ r.classList.add('cliquable'); r.onclick = ()=>ouvrirPave(j,l); }
     td.appendChild(b); r.appendChild(td);
     tb.appendChild(r);
   };
@@ -1543,11 +1621,34 @@ async function poser(j,l,valeur){
   partie.maj = Date.now();
   await Store.ecrire(parties);
   rendrePartie();
-  if(casesRestantes(partie)===0) setTimeout(()=>{ rendreFin(); montrer('fin'); }, 400);
+  if(casesRestantes(partie)===0){ cacherToast(); setTimeout(()=>{ rendreFin(); montrer('fin'); }, 400); }
+  else {
+    const qui = partie.joueurs[j];
+    let msg = qui+' · '+l.label+' : '+(valeur===0 ? 'barré' : valeur+' pt'+(valeur>1?'s':''));
+    if(nouvelle && partie.joueurs.length>1) msg += ' — à '+partie.joueurs[joueurCourant(partie)]+' de jouer';
+    afficherToast(msg, !estBot(partie,j));
+  }
+}
+
+/* ---- confirmation discrète, avec annulation à portée de pouce ---- */
+let minuteurToast = null;
+function afficherToast(msg, avecAnnuler){
+  const t = $('#toast');
+  $('#toast-txt').textContent = msg;
+  $('#toast-annuler').style.display = avecAnnuler ? '' : 'none';
+  t.hidden = false;
+  t.classList.remove('visible'); void t.offsetWidth; t.classList.add('visible');
+  clearTimeout(minuteurToast);
+  minuteurToast = setTimeout(cacherToast, 5000);
+}
+function cacherToast(){
+  clearTimeout(minuteurToast);
+  const t = $('#toast'); if(t){ t.hidden = true; t.classList.remove('visible'); }
 }
 
 async function annulerDernier(){
   if(!dernierCoup) return;
+  cacherToast();
   const {j,id:lid,avant,tourAvant} = dernierCoup;
   if(avant==null) delete partie.scores[j][lid];
   else partie.scores[j][lid] = avant;
@@ -1673,6 +1774,7 @@ $('#btn-annule-creation').onclick = ()=>{ rendreAccueil(); montrer('accueil'); }
 $('#btn-lancer').onclick = lancerPartie;
 $('#btn-retour').onclick = ()=>{ partie=null; dernierCoup=null; rendreAccueil(); montrer('accueil'); };
 $('#btn-annuler').onclick = annulerDernier;
+$('#toast-annuler').onclick = annulerDernier;
 $('#btn-classement').onclick = ()=>{ rendreFin(); montrer('fin'); };
 $('#btn-revenir-feuille').onclick = ()=>{ rendrePartie(); montrer('partie'); };
 $('#btn-rejouer').onclick = ()=>{
