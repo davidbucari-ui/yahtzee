@@ -1231,7 +1231,10 @@ function rendreCreation(){
   $('#erreur-creation').textContent='';
 }
 
-async function lancerPartie(){
+async function lancerPartie(opts){
+  /* opts : { premier: index du joueur qui commence, annonce: texte } — ignoré si c'est un événement */
+  opts = (opts && typeof opts.premier==='number') ? opts : {};
+  const premier = opts.premier || 0;
   const noms = brouillon.joueurs.map((n,i)=> n.trim() || 'Joueur '+(i+1));
   if(new Set(noms.map(n=>n.toLowerCase())).size !== noms.length){
     $('#erreur-creation').textContent = 'Deux joueurs portent le même nom — modifiez-en un.';
@@ -1241,7 +1244,7 @@ async function lancerPartie(){
     id:id(), variante:brouillon.variante, joueurs:noms, bots:[...brouillon.bots],
     options:{...brouillon.options},
     scores:noms.map(()=>({})),
-    tour:0,
+    tour:premier, premier,
     cree:Date.now(), maj:Date.now()
   };
   const saisis = brouillon.joueurs.map(n=>n.trim()).filter((n,i)=>n && !brouillon.bots[i]);
@@ -1249,6 +1252,7 @@ async function lancerPartie(){
   parties.push(p); await Store.ecrire(parties);
   partie = p; dernierCoup = null;
   rendrePartie(); montrer('partie');
+  if(opts.annonce){ teinter($('#toast'), premier); afficherToast(opts.annonce, false); }
 }
 
 /* =====================================================================
@@ -1942,15 +1946,28 @@ $('#btn-ajout-joueur').onclick = ()=>{
   inputs[inputs.length-1].focus();
 };
 $('#btn-annule-creation').onclick = ()=>{ rendreAccueil(); montrer('accueil'); };
-$('#btn-lancer').onclick = lancerPartie;
+$('#btn-lancer').onclick = ()=>lancerPartie();
 $('#btn-retour').onclick = ()=>{ partie=null; dernierCoup=null; rendreAccueil(); montrer('accueil'); };
 $('#btn-annuler').onclick = annulerDernier;
 $('#toast-annuler').onclick = annulerDernier;
 $('#btn-classement').onclick = ()=>{ rendreFin(); montrer('fin'); };
 $('#btn-revenir-feuille').onclick = ()=>{ rendrePartie(); montrer('partie'); };
 $('#btn-rejouer').onclick = ()=>{
-  brouillon = { variante:partie.variante, joueurs:[...partie.joueurs], bots:[...(partie.bots||[])], options:{...partie.options} };
-  lancerPartie();
+  const prec = partie;
+  brouillon = { variante:prec.variante, joueurs:[...prec.joueurs], bots:[...(prec.bots||[])], options:{...prec.options} };
+  /* à deux joueurs, le vainqueur de la partie terminée commence la suivante ;
+     en cas d'égalité, c'est l'autre joueur qui n'avait pas commencé */
+  let opts;
+  if(prec.joueurs.length===2 && casesRestantes(prec)===0){
+    const r = classement(prec);
+    if(r[0].total!==r[1].total){
+      opts = { premier:r[0].j, annonce:r[0].nom+' commence : vainqueur de la partie précédente' };
+    } else {
+      const autre = 1-(prec.premier||0);
+      opts = { premier:autre, annonce:'Égalité : '+prec.joueurs[autre]+' commence, l’autre a commencé la partie précédente' };
+    }
+  }
+  lancerPartie(opts);
 };
 $('#btn-supprimer').onclick = async ()=>{
   if(!confirm('Supprimer définitivement cette partie ?')) return;
