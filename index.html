@@ -6,7 +6,7 @@
 <title>Bloc de score — Yahtzee &amp; variantes</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=DM+Mono:wght@400;500&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
 <style>
 :root{
   --encre:#131A2E;
@@ -17,9 +17,9 @@
   --moutarde:#E8B33C;
   --biffe:#C2452D;
   --trait:rgba(19,26,46,.14);
-  --display:'Bricolage Grotesque',system-ui,sans-serif;
-  --corps:'Public Sans',system-ui,sans-serif;
-  --chiffres:'DM Mono',ui-monospace,monospace;
+  --display:'Fredoka','Nunito',ui-rounded,'Arial Rounded MT Bold',system-ui,sans-serif;
+  --corps:'Nunito',ui-rounded,'Arial Rounded MT Bold',system-ui,sans-serif;
+  --chiffres:'Fredoka','Nunito',ui-rounded,'Arial Rounded MT Bold',system-ui,sans-serif;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
@@ -514,6 +514,136 @@ details.carte[open]>summary::after{content:"–"}
   .bascule{padding:0 9px}
   .toast{bottom:calc(76px + env(safe-area-inset-bottom))}
 }
+
+/* =====================================================================
+   COULEURS ET TYPOGRAPHIE RONDE
+   ===================================================================== */
+:root{
+  --haut:#E8890C; --haut-fonce:#B45309; --haut-clair:#FFEBCB; --haut-case:#FFF7E6; --haut-trait:#F59E0B;
+  --bas:#0E8F86;  --bas-fonce:#0B6B65;  --bas-clair:#D2F1EC;  --bas-case:#EEFAF8;  --bas-trait:#2CB5AA;
+  --indigo:#4338CA; --indigo-fonce:#3730A3;
+}
+
+/* texte : arrondi et plus épais partout */
+body{font-weight:600}
+button{font-weight:700}
+input[type=text]{font-weight:700;font-size:17px}
+.titre-section{font-weight:700;letter-spacing:0}
+.appbar h1{font-weight:700;letter-spacing:0}
+.chapo{font-weight:600;opacity:.82}
+.etiquette,tr.entete-bloc td,.badge,.bascule,.puce-j .tag{font-weight:700;letter-spacing:.09em}
+.cat{font-weight:700}
+.regle h3,.variante b,.partie b,.podium .j{font-weight:700}
+.case,tr.total .lecture,tr.grand-total .lecture,.tete-joueur .cumul,.puce,.podium .pts{font-weight:600}
+.tete-joueur .nom{font-weight:700}
+.puce-j b{font-weight:700;font-size:15px}
+.puce-j em{opacity:.85;font-weight:600}
+.btn{font-weight:700}
+.note,.variante span,.partie span,.option small,.regle p{font-weight:600}
+
+/* bandeau du haut et boutons */
+header.appbar{background:linear-gradient(120deg,#0F766E 0%,#1F6F5C 60%,#2F7D3A 100%)}
+.btn{background:var(--indigo);box-shadow:0 3px 0 rgba(0,0,0,.16)}
+.btn:hover{background:var(--indigo-fonce)}
+.btn.vert{background:linear-gradient(135deg,#16A34A,#0E8F86)}
+.btn.vert:hover{background:linear-gradient(135deg,#15803D,#0B6B65)}
+.btn.fantome{background:#fff;color:var(--encre);border:2px solid var(--trait);box-shadow:none}
+.btn:active{box-shadow:none}
+
+/* choix de la règle : une couleur par variante */
+.variante{--vc:#16A34A;border-width:2px}
+.variante:nth-child(2){--vc:#2563EB}
+.variante:nth-child(3){--vc:#7C3AED}
+.variante:nth-child(4){--vc:#EA580C}
+.variante .de{background:var(--vc)}
+.variante[aria-pressed="true"]{border-color:var(--vc);box-shadow:inset 0 0 0 1px var(--vc);background:#fff}
+.variante[aria-pressed="true"] b{color:var(--vc)}
+
+/* pastilles d'état */
+.badge{background:#D1FAE5;color:#047857}
+.badge.finie{background:#E0E7FF;color:#3730A3}
+
+/* en-têtes de section */
+thead th.tete-joueur{padding-bottom:calc(var(--pad,10px) + 6px)}
+tr.entete-bloc.entete-haut td,tr.entete-bloc.entete-haut .col-cat{background:var(--haut);color:#fff}
+tr.entete-bloc.entete-bas td,tr.entete-bloc.entete-bas .col-cat{background:var(--bas);color:#fff}
+
+/* lignes de la feuille */
+tr.bloc-haut .col-cat{background:var(--haut-clair)}
+tr.bloc-haut .cat{border-left-color:var(--haut-trait)}
+tr.bloc-haut td:not(.col-cat){background:var(--haut-case)}
+tr.bloc-haut .case.remplie{color:var(--haut-fonce)}
+tr.bloc-bas .col-cat{background:var(--bas-clair)}
+tr.bloc-bas .cat{border-left-color:var(--bas-trait)}
+tr.bloc-bas td:not(.col-cat){background:var(--bas-case)}
+tr.bloc-bas .case.remplie{color:var(--bas-fonce)}
+tr.vedette .col-cat{background:#FDE58A}
+tr.vedette .cat{border-left-color:#F59E0B}
+tr.vedette td:not(.col-cat){background:#FFF3C4}
+.case.remplie{background:#fff}
+tr.vedette .case.remplie{color:#92400E}
+.case.zero{background:rgba(217,60,60,.1)}
+
+/* totaux */
+tr.total td,tr.total .col-cat{background:#ECE8F7}
+tr.total.reste td,tr.total.reste .col-cat{background:#FFE9B8}
+tr.total-haut td,tr.total-haut .col-cat{background:#FFCF85}
+tr.total-haut .lecture{color:var(--haut-fonce)}
+tr.total-bas td,tr.total-bas .col-cat{background:#9FE3DA}
+tr.total-bas .lecture{color:var(--bas-fonce)}
+.bonus-atteint{color:#15803D}
+tr.grand-total td,tr.grand-total .col-cat{background:var(--pc,#131A2E);color:var(--pc-fg,#fff)}
+
+/* colonne du joueur affiché */
+thead th.tete-joueur,thead th.tete-joueur.leader{
+  background:color-mix(in srgb,var(--pc,#1F6F5C) 18%,#fff);
+  box-shadow:inset 0 -5px 0 var(--pc,#1F6F5C);
+}
+.tete-joueur .nom{color:var(--encre)}
+
+/* petits dés de la feuille, une couleur par face */
+.cat .pips[data-face="1"] i:not(.vide){background:#E5484D;opacity:1}
+.cat .pips[data-face="2"] i:not(.vide){background:#2563EB;opacity:1}
+.cat .pips[data-face="3"] i:not(.vide){background:#16A34A;opacity:1}
+.cat .pips[data-face="4"] i:not(.vide){background:#D97706;opacity:1}
+.cat .pips[data-face="5"] i:not(.vide){background:#7C3AED;opacity:1}
+.cat .pips[data-face="6"] i:not(.vide){background:#0D9488;opacity:1}
+
+/* onglets joueurs */
+.puce-j{border-width:2.5px;border-color:var(--pc,var(--trait));background:#fff}
+.puce-j::before{content:"";flex:0 0 auto;width:10px;height:10px;border-radius:50%;background:var(--pc,var(--feutre))}
+.puce-j.encours{background:var(--pc);border-color:var(--pc);color:var(--pc-fg,#fff);box-shadow:0 3px 0 rgba(0,0,0,.2)}
+.puce-j.encours::before{background:var(--pc-fg,#fff)}
+.puce-j.encours .tag{background:rgba(255,255,255,.28);color:inherit}
+.puce-j.meneur b::after{color:#F59E0B}
+.puce-j.encours.meneur b::after{color:#FDE68A}
+
+/* case qui vient d'être remplie : couleur du joueur */
+@keyframes case-flash{
+  0%{background:color-mix(in srgb,var(--pc,#E8B33C) 80%,transparent)}
+  55%{background:color-mix(in srgb,var(--pc,#E8B33C) 45%,transparent)}
+  100%{background:color-mix(in srgb,var(--pc,#E8B33C) 14%,transparent)}
+}
+@media (prefers-reduced-motion:reduce){.case.flash{background:color-mix(in srgb,var(--pc,#E8B33C) 40%,transparent)}}
+
+/* création : pastille de couleur du joueur */
+.ligne-joueur .rang{
+  flex:0 0 auto;width:28px;height:28px;border-radius:50%;opacity:1;
+  display:grid;place-items:center;text-align:center;
+  background:var(--pc,#64748B);color:var(--pc-fg,#fff);font-size:14px;font-weight:700;
+}
+.bascule.on{background:var(--indigo);border-color:var(--indigo)}
+
+/* confirmation, saisie, classement */
+.toast{border-left:8px solid var(--pc,#FBBF24)}
+.pave{border-top:6px solid var(--pc,var(--feutre))}
+.pave h2{font-weight:700}
+.puce{border-width:2px;background:#fff}
+.puce:hover{border-color:var(--pc,var(--feutre))}
+.podium li{border-left:8px solid var(--pc,var(--trait));background:#fff}
+.podium li.premier{background:var(--pc,var(--encre));color:var(--pc-fg,var(--papier-clair));border-color:var(--pc,var(--encre))}
+.podium li.premier .pts{color:inherit}
+.podium li.premier .place{opacity:.85}
 </style>
 </head>
 <body>
@@ -866,8 +996,21 @@ let dernierCoup = null;     // pour Annuler
 const $ = s => document.querySelector(s);
 const el = (tag,cls,txt)=>{const n=document.createElement(tag); if(cls)n.className=cls; if(txt!=null)n.textContent=txt; return n;};
 const PIPS = {1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+/* une couleur par joueur : onglet, en-tête de colonne, total, confirmation, classement */
+const PALETTE_JOUEURS = [
+  {bg:'#D93C3C',fg:'#ffffff'}, {bg:'#2563EB',fg:'#ffffff'}, {bg:'#7C3AED',fg:'#ffffff'},
+  {bg:'#FBBF24',fg:'#1c1917'}, {bg:'#0F766E',fg:'#ffffff'}, {bg:'#DB2777',fg:'#ffffff'},
+  {bg:'#84CC16',fg:'#1a2e05'}, {bg:'#475569',fg:'#ffffff'}
+];
+function couleurJoueur(j){ return PALETTE_JOUEURS[((j%PALETTE_JOUEURS.length)+PALETTE_JOUEURS.length)%PALETTE_JOUEURS.length]; }
+function teinter(n, j){
+  const c = couleurJoueur(j);
+  n.style.setProperty('--pc', c.bg); n.style.setProperty('--pc-fg', c.fg);
+  return n;
+}
+
 function faireDe(n){
-  const d = el('div','pips');
+  const d = el('div','pips'); d.dataset.face = n;
   const actifs = PIPS[n] || [];
   for(let i=0;i<9;i++){ const p=el('i'); if(!actifs.includes(i)) p.className='vide'; d.appendChild(p); }
   return d;
@@ -1018,7 +1161,7 @@ function rendreCreation(){
   const boxJ = $('#liste-joueurs'); boxJ.innerHTML='';
   brouillon.joueurs.forEach((nom,i)=>{
     const l = el('div','ligne-joueur');
-    l.appendChild(el('span','rang', String(i+1)));
+    l.appendChild(teinter(el('span','rang', String(i+1)), i));
     const inp = document.createElement('input');
     inp.type='text'; inp.value=nom; inp.placeholder='Joueur '+(i+1);
     inp.maxLength=16; inp.autocomplete='off';
@@ -1420,6 +1563,7 @@ function rendrePartie(){
   const meneur = p.joueurs.length>1 ? classement(p)[0] : null;
   const avance = meneur && meneur.total>0 ? meneur.j : -1;
 
+  teinter(document.querySelector('.feuille-enveloppe'), jc);
   /* barre des joueurs : on choisit qui est à l'écran */
   const barre = $('#barre-joueurs'); barre.innerHTML='';
   if(p.joueurs.length>1){
@@ -1431,7 +1575,7 @@ function rendrePartie(){
     p.joueurs.forEach((nom,j)=>{
       const fini = casesRestantesJoueur(p,j)===0;
       const b = el('button','puce-j'+(j===jc?' encours':'')+(j===avance?' meneur':'')+(fini&&j!==jc?' fini':''));
-      b.setAttribute('aria-pressed', String(j===jc));
+      b.setAttribute('aria-pressed', String(j===jc)); teinter(b,j);
       b.appendChild(el('b',null,nom));
       if(estBot(p,j)) b.appendChild(el('i','tag','IA'));
       b.appendChild(el('em',null,String(totalGeneral(p,j))));
@@ -1465,7 +1609,7 @@ function rendrePartie(){
   const tb = $('#corps-feuille'); tb.innerHTML='';
 
   const blocTitre = (txt)=>{
-    const r = el('tr','entete-bloc');
+    const r = el('tr','entete-bloc '+(/haute/i.test(txt)?'entete-haut':'entete-bas'));
     const c = el('td','col-cat',txt); r.appendChild(c);
     r.appendChild(el('td'));
     tb.appendChild(r);
@@ -1527,7 +1671,7 @@ function rendrePartie(){
 
   blocTitre('Section basse');
   lignesBasses(p).forEach(l=>ligneSaisie(l,'bas'));
-  ligneTotal('Total section basse', j=>totalBas(p,j));
+  ligneTotal('Total section basse', j=>totalBas(p,j), 'total total-bas');
   ligneTotal('Total', j=>totalGeneral(p,j), 'grand-total');
 
   const reste = casesRestantes(p);
@@ -1559,7 +1703,7 @@ function ajusterFeuille(){
   const haut = env.getBoundingClientRect().top + window.scrollY;
   const bas  = document.querySelector('#ecran-partie .principal').offsetHeight;
   const note = $('#note-partie').offsetHeight + 8;
-  const dispo = window.innerHeight - haut - bas - note - 16;
+  const dispo = window.innerHeight - haut - bas - note - 22;
   const h = Math.max(21, Math.min(52, Math.floor(dispo/unites)));
   const st = env.style;
   st.setProperty('--h',  h+'px');
@@ -1579,6 +1723,7 @@ window.addEventListener('orientationchange', ()=>setTimeout(ajusterFeuille,200))
    ===================================================================== */
 function ouvrirPave(j,l){
   saisie = {j, l};
+  teinter(document.querySelector('.pave'), j);
   $('#pave-titre').textContent = l.label;
   $('#pave-qui').textContent = partie.joueurs[j];
   $('#pave-aide').textContent = l.aide || '';
@@ -1651,6 +1796,7 @@ async function poser(j,l,valeur){
     const qui = partie.joueurs[j];
     let msg = qui+' · '+l.label+' : '+(valeur===0 ? 'barré' : valeur+' pt'+(valeur>1?'s':''));
     if(nouvelle && partie.joueurs.length>1) msg += ' — à '+partie.joueurs[joueurCourant(partie)]+' de jouer';
+    teinter($('#toast'), j);
     afficherToast(msg, !estBot(partie,j));
   }
 }
@@ -1763,7 +1909,7 @@ function rendreFin(){
     : 'Il reste '+casesRestantes(p)+' case(s) à remplir.';
   const ul = $('#podium'); ul.innerHTML='';
   rang.forEach((r,i)=>{
-    const li = el('li', i===0 && fini ? 'premier' : '');
+    const li = teinter(el('li', i===0 && fini ? 'premier' : ''), r.j);
     li.appendChild(el('span','place', String(i+1)));
     li.appendChild(el('span','j', r.nom));
     li.appendChild(el('span','pts', String(r.total)));
