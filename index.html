@@ -6,7 +6,7 @@
 <title>Bloc de score — Yahtzee &amp; variantes</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=DM+Mono:wght@400;500&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
 <style>
 :root{
   --encre:#131A2E;
@@ -17,9 +17,9 @@
   --moutarde:#E8B33C;
   --biffe:#C2452D;
   --trait:rgba(19,26,46,.14);
-  --display:'Bricolage Grotesque',system-ui,sans-serif;
-  --corps:'Public Sans',system-ui,sans-serif;
-  --chiffres:'DM Mono',ui-monospace,monospace;
+  --display:'Fredoka','Nunito',ui-rounded,'Arial Rounded MT Bold',system-ui,sans-serif;
+  --corps:'Nunito',ui-rounded,'Arial Rounded MT Bold',system-ui,sans-serif;
+  --chiffres:'Fredoka','Nunito',ui-rounded,'Arial Rounded MT Bold',system-ui,sans-serif;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
@@ -438,15 +438,221 @@ tr.reste .lecture.ok{color:var(--feutre);font-weight:600}
 
 .note{font-size:12.5px;opacity:.6;margin-top:14px}
 .erreur{color:var(--biffe);font-size:13.5px;font-weight:600;margin:8px 0 0;min-height:18px}
+
+/* =====================================================================
+   ERGONOMIE & LISIBILITÉ
+   ===================================================================== */
+/* textes secondaires plus contrastés */
+.etiquette{opacity:.72;font-size:11.5px}
+.note{opacity:.75;font-size:13px}
+
+/* toute la ligne est une cible tactile */
+tr.cliquable{cursor:pointer}
+tr.cliquable:hover td,tr.cliquable:hover .col-cat{background-image:linear-gradient(rgba(31,111,92,.07),rgba(31,111,92,.07))}
+tr.cliquable:active td,tr.cliquable:active .col-cat{background-image:linear-gradient(rgba(31,111,92,.16),rgba(31,111,92,.16))}
+
+/* une case vide ouverte se lit comme « à remplir » */
+.case.vide:not(.verrouillee)::after{
+  content:"+";opacity:.34;font-weight:400;font-size:calc(var(--f2,21px)*.85);color:var(--feutre-fonce);
+}
+
+/* retour tactile */
+.btn,.puce,.variante,.partie,.puce-j,.nav-j,.bascule,.btn-bar{transition:transform .08s ease,background-color .15s,border-color .15s}
+.btn:active,.puce:active,.variante:active,.partie:active,.puce-j:active,.nav-j:active,.bascule:active,.btn-bar:active{transform:scale(.97)}
+@media (prefers-reduced-motion:reduce){
+  .btn,.puce,.variante,.partie,.puce-j,.nav-j,.bascule,.btn-bar{transition:none}
+  .btn:active,.puce:active,.variante:active,.partie:active,.puce-j:active,.nav-j:active,.bascule:active,.btn-bar:active{transform:none}
+}
+
+/* onglets joueurs : cibles plus grandes, actif bien visible */
+.puce-j{min-height:44px}
+.puce-j.encours{box-shadow:0 2px 0 var(--moutarde)}
+.nav-j{min-width:44px;min-height:44px}
+
+/* la case qui vient d'être remplie reste en évidence pendant la pause */
+.case.flash{animation:case-flash 2s ease-out both}
+@keyframes case-flash{0%{background:rgba(232,179,60,.75)}55%{background:rgba(232,179,60,.45)}100%{background:rgba(232,179,60,.12)}}
+@media (prefers-reduced-motion:reduce){.case.flash{animation:none;background:rgba(232,179,60,.45)}}
+
+/* confirmation après chaque score */
+.toast{
+  position:fixed;left:50%;transform:translateX(-50%);z-index:40;
+  bottom:calc(84px + env(safe-area-inset-bottom));
+  width:calc(100% - 24px);max-width:520px;
+  display:flex;align-items:center;gap:12px;
+  background:var(--encre);color:var(--papier-clair);
+  border-radius:12px;padding:10px 10px 10px 16px;
+  box-shadow:0 8px 24px rgba(19,26,46,.28);
+  font-size:14.5px;line-height:1.3;
+}
+.toast[hidden]{display:none}
+.toast.visible{animation:toast-in .22s cubic-bezier(.2,.8,.3,1)}
+@keyframes toast-in{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}
+@media (prefers-reduced-motion:reduce){.toast.visible{animation:none}}
+.toast-txt{flex:1}
+.toast-act{
+  flex:0 0 auto;min-height:40px;padding:0 14px;border-radius:9px;
+  border:1.5px solid rgba(245,243,236,.4);color:var(--moutarde);font-weight:600;font-size:14px;
+}
+.toast-act:hover{background:rgba(245,243,236,.1)}
+
+/* transfert d'appareil replié par défaut */
+details.carte>summary{cursor:pointer;list-style:none;margin-bottom:0;display:flex;align-items:center;justify-content:space-between;min-height:32px}
+details.carte>summary::-webkit-details-marker{display:none}
+details.carte>summary::after{content:"+";font-size:18px;opacity:.7}
+details.carte[open]>summary{margin-bottom:10px}
+details.carte[open]>summary::after{content:"–"}
+
+/* téléphone : boutons du haut réduits à l'icône, formulaire qui ne déborde plus */
+@media (max-width:560px){
+  .btn-bar .lib{display:none}
+  .btn-bar{min-width:42px;min-height:38px;padding:6px 12px;font-size:17px;line-height:1}
+  .appbar{gap:8px}
+  .ligne-joueur{gap:6px}
+  .ligne-joueur input[type=text]{min-width:0}
+  .ligne-joueur .rang{width:14px}
+  .bascule{padding:0 9px}
+  .toast{bottom:calc(76px + env(safe-area-inset-bottom))}
+}
+
+/* =====================================================================
+   COULEURS ET TYPOGRAPHIE RONDE
+   ===================================================================== */
+:root{
+  --haut:#E8890C; --haut-fonce:#B45309; --haut-clair:#FFEBCB; --haut-case:#FFF7E6; --haut-trait:#F59E0B;
+  --bas:#0E8F86;  --bas-fonce:#0B6B65;  --bas-clair:#D2F1EC;  --bas-case:#EEFAF8;  --bas-trait:#2CB5AA;
+  --indigo:#4338CA; --indigo-fonce:#3730A3;
+}
+
+/* texte : arrondi et plus épais partout */
+body{font-weight:600}
+button{font-weight:700}
+input[type=text]{font-weight:700;font-size:17px}
+.titre-section{font-weight:700;letter-spacing:0}
+.appbar h1{font-weight:700;letter-spacing:0}
+.chapo{font-weight:600;opacity:.82}
+.etiquette,tr.entete-bloc td,.badge,.bascule,.puce-j .tag{font-weight:700;letter-spacing:.09em}
+.cat{font-weight:700}
+.regle h3,.variante b,.partie b,.podium .j{font-weight:700}
+.case,tr.total .lecture,tr.grand-total .lecture,.tete-joueur .cumul,.puce,.podium .pts{font-weight:600}
+.tete-joueur .nom{font-weight:700}
+.puce-j b{font-weight:700;font-size:15px}
+.puce-j em{opacity:.85;font-weight:600}
+.btn{font-weight:700}
+.note,.variante span,.partie span,.option small,.regle p{font-weight:600}
+
+/* bandeau du haut et boutons */
+header.appbar{background:linear-gradient(120deg,#0F766E 0%,#1F6F5C 60%,#2F7D3A 100%)}
+.btn{background:var(--indigo);box-shadow:0 3px 0 rgba(0,0,0,.16)}
+.btn:hover{background:var(--indigo-fonce)}
+.btn.vert{background:linear-gradient(135deg,#16A34A,#0E8F86)}
+.btn.vert:hover{background:linear-gradient(135deg,#15803D,#0B6B65)}
+.btn.fantome{background:#fff;color:var(--encre);border:2px solid var(--trait);box-shadow:none}
+.btn:active{box-shadow:none}
+
+/* choix de la règle : une couleur par variante */
+.variante{--vc:#16A34A;border-width:2px}
+.variante:nth-child(2){--vc:#2563EB}
+.variante:nth-child(3){--vc:#7C3AED}
+.variante:nth-child(4){--vc:#EA580C}
+.variante .de{background:var(--vc)}
+.variante[aria-pressed="true"]{border-color:var(--vc);box-shadow:inset 0 0 0 1px var(--vc);background:#fff}
+.variante[aria-pressed="true"] b{color:var(--vc)}
+
+/* pastilles d'état */
+.badge{background:#D1FAE5;color:#047857}
+.badge.finie{background:#E0E7FF;color:#3730A3}
+
+/* en-têtes de section */
+thead th.tete-joueur{padding-bottom:calc(var(--pad,10px) + 6px)}
+tr.entete-bloc.entete-haut td,tr.entete-bloc.entete-haut .col-cat{background:var(--haut);color:#fff}
+tr.entete-bloc.entete-bas td,tr.entete-bloc.entete-bas .col-cat{background:var(--bas);color:#fff}
+
+/* lignes de la feuille */
+tr.bloc-haut .col-cat{background:var(--haut-clair)}
+tr.bloc-haut .cat{border-left-color:var(--haut-trait)}
+tr.bloc-haut td:not(.col-cat){background:var(--haut-case)}
+tr.bloc-haut .case.remplie{color:var(--haut-fonce)}
+tr.bloc-bas .col-cat{background:var(--bas-clair)}
+tr.bloc-bas .cat{border-left-color:var(--bas-trait)}
+tr.bloc-bas td:not(.col-cat){background:var(--bas-case)}
+tr.bloc-bas .case.remplie{color:var(--bas-fonce)}
+tr.vedette .col-cat{background:#FDE58A}
+tr.vedette .cat{border-left-color:#F59E0B}
+tr.vedette td:not(.col-cat){background:#FFF3C4}
+.case.remplie{background:#fff}
+tr.vedette .case.remplie{color:#92400E}
+.case.zero{background:rgba(217,60,60,.1)}
+
+/* totaux */
+tr.total td,tr.total .col-cat{background:#ECE8F7}
+tr.total.reste td,tr.total.reste .col-cat{background:#FFE9B8}
+tr.total-haut td,tr.total-haut .col-cat{background:#FFCF85}
+tr.total-haut .lecture{color:var(--haut-fonce)}
+tr.total-bas td,tr.total-bas .col-cat{background:#9FE3DA}
+tr.total-bas .lecture{color:var(--bas-fonce)}
+.bonus-atteint{color:#15803D}
+tr.grand-total td,tr.grand-total .col-cat{background:var(--pc,#131A2E);color:var(--pc-fg,#fff)}
+
+/* colonne du joueur affiché */
+thead th.tete-joueur,thead th.tete-joueur.leader{
+  background:color-mix(in srgb,var(--pc,#1F6F5C) 18%,#fff);
+  box-shadow:inset 0 -5px 0 var(--pc,#1F6F5C);
+}
+.tete-joueur .nom{color:var(--encre)}
+
+/* petits dés de la feuille, une couleur par face */
+.cat .pips[data-face="1"] i:not(.vide){background:#E5484D;opacity:1}
+.cat .pips[data-face="2"] i:not(.vide){background:#2563EB;opacity:1}
+.cat .pips[data-face="3"] i:not(.vide){background:#16A34A;opacity:1}
+.cat .pips[data-face="4"] i:not(.vide){background:#D97706;opacity:1}
+.cat .pips[data-face="5"] i:not(.vide){background:#7C3AED;opacity:1}
+.cat .pips[data-face="6"] i:not(.vide){background:#0D9488;opacity:1}
+
+/* onglets joueurs */
+.puce-j{border-width:2.5px;border-color:var(--pc,var(--trait));background:#fff}
+.puce-j::before{content:"";flex:0 0 auto;width:10px;height:10px;border-radius:50%;background:var(--pc,var(--feutre))}
+.puce-j.encours{background:var(--pc);border-color:var(--pc);color:var(--pc-fg,#fff);box-shadow:0 3px 0 rgba(0,0,0,.2)}
+.puce-j.encours::before{background:var(--pc-fg,#fff)}
+.puce-j.encours .tag{background:rgba(255,255,255,.28);color:inherit}
+.puce-j.meneur b::after{color:#F59E0B}
+.puce-j.encours.meneur b::after{color:#FDE68A}
+
+/* case qui vient d'être remplie : couleur du joueur */
+@keyframes case-flash{
+  0%{background:color-mix(in srgb,var(--pc,#E8B33C) 80%,transparent)}
+  55%{background:color-mix(in srgb,var(--pc,#E8B33C) 45%,transparent)}
+  100%{background:color-mix(in srgb,var(--pc,#E8B33C) 14%,transparent)}
+}
+@media (prefers-reduced-motion:reduce){.case.flash{background:color-mix(in srgb,var(--pc,#E8B33C) 40%,transparent)}}
+
+/* création : pastille de couleur du joueur */
+.ligne-joueur .rang{
+  flex:0 0 auto;width:28px;height:28px;border-radius:50%;opacity:1;
+  display:grid;place-items:center;text-align:center;
+  background:var(--pc,#64748B);color:var(--pc-fg,#fff);font-size:14px;font-weight:700;
+}
+.bascule.on{background:var(--indigo);border-color:var(--indigo)}
+
+/* confirmation, saisie, classement */
+.toast{border-left:8px solid var(--pc,#FBBF24)}
+.pave{border-top:6px solid var(--pc,var(--feutre))}
+.pave h2{font-weight:700}
+.puce{border-width:2px;background:#fff}
+.puce:hover{border-color:var(--pc,var(--feutre))}
+.podium li{border-left:8px solid var(--pc,var(--trait));background:#fff}
+.podium li.premier{background:var(--pc,var(--encre));color:var(--pc-fg,var(--papier-clair));border-color:var(--pc,var(--encre))}
+.podium li.premier .pts{color:inherit}
+.podium li.premier .place{opacity:.85}
 </style>
 </head>
 <body>
 
 <header class="appbar">
-  <button class="btn-bar cache" id="btn-retour">‹ Parties</button>
+  <button class="btn-bar cache" id="btn-retour" aria-label="Retour aux parties"><span aria-hidden="true">‹</span><span class="lib"> Parties</span></button>
   <h1 id="titre-appli">Bloc de score<span class="sous" id="sous-titre">Yahtzee et ses variantes</span></h1>
-  <button class="btn-bar cache" id="btn-annuler">Annuler</button>
-  <button class="btn-bar cache" id="btn-regles">Règles</button>
+  <button class="btn-bar cache" id="btn-annuler" aria-label="Annuler le dernier score"><span aria-hidden="true">↶</span><span class="lib"> Annuler</span></button>
+  <button class="btn-bar cache" id="btn-regles" aria-label="Règles du jeu"><span aria-hidden="true">?</span><span class="lib"> Règles</span></button>
 </header>
 
 <main>
@@ -456,8 +662,8 @@ tr.reste .lecture.ok{color:var(--feutre);font-weight:600}
   <h2 class="titre-section">Vos parties</h2>
   <p class="chapo">Reprenez une partie en cours ou lancez-en une nouvelle. Tout reste sur cet appareil.</p>
   <div id="liste-parties"></div>
-  <div class="carte" id="bloc-transfert">
-    <div class="etiquette">Changer d’appareil</div>
+  <details class="carte" id="bloc-transfert">
+    <summary class="etiquette">Changer d’appareil</summary>
     <p style="margin:0 0 12px;font-size:13.5px;opacity:.7">Exportez vos parties dans un fichier, puis importez-le sur l’autre appareil.</p>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
       <button class="btn fantome" id="btn-export" style="flex:1;padding:12px">Exporter</button>
@@ -465,7 +671,7 @@ tr.reste .lecture.ok{color:var(--feutre);font-weight:600}
     </div>
     <input type="file" id="champ-import" accept="application/json,.json" hidden>
     <p class="erreur" id="msg-transfert"></p>
-  </div>
+  </details>
   <div class="principal"><div class="inner">
     <button class="btn vert" id="btn-nouvelle">Nouvelle partie</button>
   </div></div>
@@ -530,6 +736,11 @@ tr.reste .lecture.ok{color:var(--feutre);font-weight:600}
     <button class="btn" id="btn-ferme-regles">Retour</button>
   </div></div>
 </section>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden>
+  <span class="toast-txt" id="toast-txt"></span>
+  <button class="toast-act" id="toast-annuler">Annuler</button>
+</div>
 
 <!-- ========== PAVÉ DE SAISIE ========== -->
 <div class="voile" id="voile" hidden>
@@ -785,8 +996,21 @@ let dernierCoup = null;     // pour Annuler
 const $ = s => document.querySelector(s);
 const el = (tag,cls,txt)=>{const n=document.createElement(tag); if(cls)n.className=cls; if(txt!=null)n.textContent=txt; return n;};
 const PIPS = {1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+/* une couleur par joueur : onglet, en-tête de colonne, total, confirmation, classement */
+const PALETTE_JOUEURS = [
+  {bg:'#D93C3C',fg:'#ffffff'}, {bg:'#2563EB',fg:'#ffffff'}, {bg:'#7C3AED',fg:'#ffffff'},
+  {bg:'#FBBF24',fg:'#1c1917'}, {bg:'#0F766E',fg:'#ffffff'}, {bg:'#DB2777',fg:'#ffffff'},
+  {bg:'#84CC16',fg:'#1a2e05'}, {bg:'#475569',fg:'#ffffff'}
+];
+function couleurJoueur(j){ return PALETTE_JOUEURS[((j%PALETTE_JOUEURS.length)+PALETTE_JOUEURS.length)%PALETTE_JOUEURS.length]; }
+function teinter(n, j){
+  const c = couleurJoueur(j);
+  n.style.setProperty('--pc', c.bg); n.style.setProperty('--pc-fg', c.fg);
+  return n;
+}
+
 function faireDe(n){
-  const d = el('div','pips');
+  const d = el('div','pips'); d.dataset.face = n;
   const actifs = PIPS[n] || [];
   for(let i=0;i<9;i++){ const p=el('i'); if(!actifs.includes(i)) p.className='vide'; d.appendChild(p); }
   return d;
@@ -866,6 +1090,7 @@ function montrer(nom){
   document.querySelectorAll('.ecran').forEach(s=>s.classList.remove('actif'));
   $('#ecran-'+nom).classList.add('actif');
   const enPartie = (nom==='partie');
+  if(!enPartie){ cacherToast(); annulerBascule(); }
   $('#btn-retour').classList.toggle('cache', nom!=='partie' && nom!=='fin');
   $('#btn-annuler').classList.toggle('cache', !enPartie || !dernierCoup);
   $('#btn-regles').classList.toggle('cache', nom!=='partie' && nom!=='creation');
@@ -936,7 +1161,7 @@ function rendreCreation(){
   const boxJ = $('#liste-joueurs'); boxJ.innerHTML='';
   brouillon.joueurs.forEach((nom,i)=>{
     const l = el('div','ligne-joueur');
-    l.appendChild(el('span','rang', String(i+1)));
+    l.appendChild(teinter(el('span','rang', String(i+1)), i));
     const inp = document.createElement('input');
     inp.type='text'; inp.value=nom; inp.placeholder='Joueur '+(i+1);
     inp.maxLength=16; inp.autocomplete='off';
@@ -1006,7 +1231,10 @@ function rendreCreation(){
   $('#erreur-creation').textContent='';
 }
 
-async function lancerPartie(){
+async function lancerPartie(opts){
+  /* opts : { premier: index du joueur qui commence, annonce: texte } — ignoré si c'est un événement */
+  opts = (opts && typeof opts.premier==='number') ? opts : {};
+  const premier = opts.premier || 0;
   const noms = brouillon.joueurs.map((n,i)=> n.trim() || 'Joueur '+(i+1));
   if(new Set(noms.map(n=>n.toLowerCase())).size !== noms.length){
     $('#erreur-creation').textContent = 'Deux joueurs portent le même nom — modifiez-en un.';
@@ -1016,7 +1244,7 @@ async function lancerPartie(){
     id:id(), variante:brouillon.variante, joueurs:noms, bots:[...brouillon.bots],
     options:{...brouillon.options},
     scores:noms.map(()=>({})),
-    tour:0,
+    tour:premier, premier,
     cree:Date.now(), maj:Date.now()
   };
   const saisis = brouillon.joueurs.map(n=>n.trim()).filter((n,i)=>n && !brouillon.bots[i]);
@@ -1024,6 +1252,7 @@ async function lancerPartie(){
   parties.push(p); await Store.ecrire(parties);
   partie = p; dernierCoup = null;
   rendrePartie(); montrer('partie');
+  if(opts.annonce){ teinter($('#toast'), premier); afficherToast(opts.annonce, false); }
 }
 
 /* =====================================================================
@@ -1115,7 +1344,7 @@ function rendreDes(){
     b.onclick = ()=>{ p.desCaches=false; rendrePartie(); };
     hote.appendChild(b); return;
   }
-  const jc = joueurCourant(p), d = etatDes(p), bot = estBot(p,jc);
+  const jc = joueurAffiche(p), d = etatDes(p), bot = estBot(p,jc), fige = vueFigee!==null;
   const bloc = el('div','panneau-des');
 
   const tete = el('div','des-tete');
@@ -1139,7 +1368,7 @@ function rendreDes(){
     const b = el('button','de-jeu'+(v===0?' vierge':'')+((d.gardes[i]&&d.lancers>0)?' garde':''));
     if(v>0) b.appendChild(faireDe(v));
     b.setAttribute('aria-label','Dé '+(i+1)+(v?' — '+v:' — non lancé')+(d.gardes[i]?' — gardé':''));
-    b.disabled = d.lancers===0 || d.lancers>=3 || bot || botJoue;
+    b.disabled = d.lancers===0 || d.lancers>=3 || bot || botJoue || fige;
     b.onclick = async ()=>{ d.gardes[i]=!d.gardes[i]; await sauverDiscret(); rendrePartie(); };
     rangee.appendChild(b);
   });
@@ -1150,7 +1379,7 @@ function rendreDes(){
     const auto = p.botAuto!==false;
     const b = el('button','btn vert',
       botJoue ? p.joueurs[jc]+' joue…' : (auto ? 'À '+p.joueurs[jc]+' de jouer…' : 'Faire jouer '+p.joueurs[jc]));
-    b.disabled = botJoue || auto;
+    b.disabled = botJoue || auto || fige;
     b.onclick = jouerBot;
     actions.appendChild(b);
   } else {
@@ -1158,7 +1387,7 @@ function rendreDes(){
       d.lancers===0 ? 'Lancer les dés'
       : d.lancers<3 ? 'Relancer ('+(3-d.lancers)+' restant'+((3-d.lancers)>1?'s':'')+')'
       : 'Plus de lancer');
-    b.disabled = d.lancers>=3;
+    b.disabled = d.lancers>=3 || fige;
     b.onclick = lancerEtAnimer;
     actions.appendChild(b);
     if(d.lancers>0){
@@ -1180,6 +1409,25 @@ function rendreDes(){
 
 let messageDes = '';
 let botJoue = false;
+
+/* Temporisation avant de passer la main : le tour avance tout de suite dans les
+   données (donc sauvegardé), mais l'écran reste 2 s sur le joueur qui vient de jouer. */
+const DELAI_BASCULE = 2000;
+let vueFigee = null;           // index du joueur gardé à l'écran, ou null
+let minuteurBascule = null;
+function joueurAffiche(p){ return vueFigee!==null ? vueFigee : joueurCourant(p); }
+function figerVue(j){
+  clearTimeout(minuteurBascule);
+  vueFigee = j;
+  minuteurBascule = setTimeout(finBascule, DELAI_BASCULE);
+}
+function annulerBascule(){ clearTimeout(minuteurBascule); minuteurBascule = null; vueFigee = null; }
+function finBascule(){
+  minuteurBascule = null;
+  if(vueFigee===null) return;
+  vueFigee = null;
+  if(partie && $('#ecran-partie').classList.contains('actif')){ rendrePartie(); planifierBot(); }
+}
 
 async function sauverDiscret(){ await Store.ecrire(parties); }
 
@@ -1257,7 +1505,7 @@ let sauterAuto = false;      /* après un « Annuler », on laisse la main à l'
 function planifierBot(delai){
   clearTimeout(minuteurBot);
   const p = partie;
-  if(!p || botJoue) return;
+  if(!p || botJoue || vueFigee!==null) return;
   if(sauterAuto){ sauterAuto = false; return; }
   if(p.botAuto===false) return;
   if(!$('#ecran-partie').classList.contains('actif')) return;
@@ -1312,13 +1560,14 @@ async function jouerBot(){
    ===================================================================== */
 function rendrePartie(){
   const p = partie, v = VARIANTES[p.variante];
-  const jc = joueurCourant(p);
+  const jc = joueurAffiche(p), fige = vueFigee!==null;
   $('#titre-appli').firstChild.nodeValue = v.nom;
   $('#sous-titre').textContent = p.joueurs[jc]+' · '+casesRestantesJoueur(p,jc)+' case'+(casesRestantesJoueur(p,jc)>1?'s':'')+' à remplir';
 
   const meneur = p.joueurs.length>1 ? classement(p)[0] : null;
   const avance = meneur && meneur.total>0 ? meneur.j : -1;
 
+  teinter(document.querySelector('.feuille-enveloppe'), jc);
   /* barre des joueurs : on choisit qui est à l'écran */
   const barre = $('#barre-joueurs'); barre.innerHTML='';
   if(p.joueurs.length>1){
@@ -1330,15 +1579,16 @@ function rendrePartie(){
     p.joueurs.forEach((nom,j)=>{
       const fini = casesRestantesJoueur(p,j)===0;
       const b = el('button','puce-j'+(j===jc?' encours':'')+(j===avance?' meneur':'')+(fini&&j!==jc?' fini':''));
-      b.setAttribute('aria-pressed', String(j===jc));
+      b.setAttribute('aria-pressed', String(j===jc)); teinter(b,j);
       b.appendChild(el('b',null,nom));
       if(estBot(p,j)) b.appendChild(el('i','tag','IA'));
       b.appendChild(el('em',null,String(totalGeneral(p,j))));
-      b.disabled = botJoue;
+      b.disabled = botJoue || fige;
       b.onclick = ()=>{ if(j===p.tour) return; p.tour=j; reinitDes(p); messageDes=''; sauverDiscret(); rendrePartie(); };
       bande.appendChild(b);
     });
     barre.appendChild(bande);
+    requestAnimationFrame(()=>{ const a=bande.querySelector('.encours'); if(a) bande.scrollTo({left:a.offsetLeft-(bande.clientWidth-a.offsetWidth)/2, behavior:'smooth'}); });
     const suiv = el('button','nav-j','›');
     suiv.setAttribute('aria-label','Joueur suivant');
     suiv.onclick = ()=>changerJoueur(1);
@@ -1363,7 +1613,7 @@ function rendrePartie(){
   const tb = $('#corps-feuille'); tb.innerHTML='';
 
   const blocTitre = (txt)=>{
-    const r = el('tr','entete-bloc');
+    const r = el('tr','entete-bloc '+(/haute/i.test(txt)?'entete-haut':'entete-bas'));
     const c = el('td','col-cat',txt); r.appendChild(c);
     r.appendChild(el('td'));
     tb.appendChild(r);
@@ -1383,12 +1633,12 @@ function rendrePartie(){
     const ouverte = caseOuverte(p,j,l);
     /* proposition calculée à partir des dés lancés */
     const sugg = (val==null && ouverte && !p.desCaches && desLances(p)) ? scoreDe(p,l,etatDes(p).valeurs) : null;
-    const b = el('button','case'+(val==null?(sugg==null?' vide':''):(val===0?' zero':' remplie'))+(ouverte?'':' verrouillee'));
+    const b = el('button','case'+(val==null?(sugg==null?' vide':''):(val===0?' zero':' remplie'))+(ouverte?'':' verrouillee')+(fige && dernierCoup && dernierCoup.j===j && dernierCoup.id===l.id ? ' flash':''));
     b.textContent = val==null ? '' : String(val);
     if(val==null && sugg!=null) b.appendChild(el('span','sugg'+(sugg===0?' nul':''), String(sugg)));
-    b.disabled = !ouverte || botJoue;
+    b.disabled = !ouverte || botJoue || fige;
     b.setAttribute('aria-label', nom+' — '+l.label+' — '+(val==null?(ouverte?'vide':'verrouillée'):val+' points'));
-    if(ouverte) b.onclick = ()=>ouvrirPave(j,l);
+    if(ouverte && !botJoue && !fige){ r.classList.add('cliquable'); r.onclick = ()=>ouvrirPave(j,l); }
     td.appendChild(b); r.appendChild(td);
     tb.appendChild(r);
   };
@@ -1425,7 +1675,7 @@ function rendrePartie(){
 
   blocTitre('Section basse');
   lignesBasses(p).forEach(l=>ligneSaisie(l,'bas'));
-  ligneTotal('Total section basse', j=>totalBas(p,j));
+  ligneTotal('Total section basse', j=>totalBas(p,j), 'total total-bas');
   ligneTotal('Total', j=>totalGeneral(p,j), 'grand-total');
 
   const reste = casesRestantes(p);
@@ -1457,7 +1707,7 @@ function ajusterFeuille(){
   const haut = env.getBoundingClientRect().top + window.scrollY;
   const bas  = document.querySelector('#ecran-partie .principal').offsetHeight;
   const note = $('#note-partie').offsetHeight + 8;
-  const dispo = window.innerHeight - haut - bas - note - 16;
+  const dispo = window.innerHeight - haut - bas - note - 22;
   const h = Math.max(21, Math.min(52, Math.floor(dispo/unites)));
   const st = env.style;
   st.setProperty('--h',  h+'px');
@@ -1477,6 +1727,7 @@ window.addEventListener('orientationchange', ()=>setTimeout(ajusterFeuille,200))
    ===================================================================== */
 function ouvrirPave(j,l){
   saisie = {j, l};
+  teinter(document.querySelector('.pave'), j);
   $('#pave-titre').textContent = l.label;
   $('#pave-qui').textContent = partie.joueurs[j];
   $('#pave-aide').textContent = l.aide || '';
@@ -1523,7 +1774,7 @@ function ouvrirPave(j,l){
 function fermerPave(){ $('#voile').hidden = true; saisie=null; planifierBot(); }
 
 function changerJoueur(sens){
-  if(botJoue) return;
+  if(botJoue || vueFigee!==null) return;
   partie.tour = joueurSuivant(partie, joueurCourant(partie), sens);
   reinitDes(partie); messageDes='';
   sauverDiscret();
@@ -1539,15 +1790,40 @@ async function poser(j,l,valeur){
   /* on passe la main au joueur suivant après une case nouvellement remplie */
   if(nouvelle && partie.joueurs.length>1 && casesRestantes(partie)>0){
     partie.tour = joueurSuivant(partie, j, 1);
+    if(partie.tour!==j) figerVue(j);
   }
   partie.maj = Date.now();
   await Store.ecrire(parties);
   rendrePartie();
-  if(casesRestantes(partie)===0) setTimeout(()=>{ rendreFin(); montrer('fin'); }, 400);
+  if(casesRestantes(partie)===0){ cacherToast(); setTimeout(()=>{ rendreFin(); montrer('fin'); }, 400); }
+  else {
+    const qui = partie.joueurs[j];
+    let msg = qui+' · '+l.label+' : '+(valeur===0 ? 'barré' : valeur+' pt'+(valeur>1?'s':''));
+    if(nouvelle && partie.joueurs.length>1) msg += ' — à '+partie.joueurs[joueurCourant(partie)]+' de jouer';
+    teinter($('#toast'), j);
+    afficherToast(msg, !estBot(partie,j));
+  }
+}
+
+/* ---- confirmation discrète, avec annulation à portée de pouce ---- */
+let minuteurToast = null;
+function afficherToast(msg, avecAnnuler){
+  const t = $('#toast');
+  $('#toast-txt').textContent = msg;
+  $('#toast-annuler').style.display = avecAnnuler ? '' : 'none';
+  t.hidden = false;
+  t.classList.remove('visible'); void t.offsetWidth; t.classList.add('visible');
+  clearTimeout(minuteurToast);
+  minuteurToast = setTimeout(cacherToast, 5000);
+}
+function cacherToast(){
+  clearTimeout(minuteurToast);
+  const t = $('#toast'); if(t){ t.hidden = true; t.classList.remove('visible'); }
 }
 
 async function annulerDernier(){
   if(!dernierCoup) return;
+  cacherToast(); annulerBascule();
   const {j,id:lid,avant,tourAvant} = dernierCoup;
   if(avant==null) delete partie.scores[j][lid];
   else partie.scores[j][lid] = avant;
@@ -1637,7 +1913,7 @@ function rendreFin(){
     : 'Il reste '+casesRestantes(p)+' case(s) à remplir.';
   const ul = $('#podium'); ul.innerHTML='';
   rang.forEach((r,i)=>{
-    const li = el('li', i===0 && fini ? 'premier' : '');
+    const li = teinter(el('li', i===0 && fini ? 'premier' : ''), r.j);
     li.appendChild(el('span','place', String(i+1)));
     li.appendChild(el('span','j', r.nom));
     li.appendChild(el('span','pts', String(r.total)));
@@ -1670,14 +1946,28 @@ $('#btn-ajout-joueur').onclick = ()=>{
   inputs[inputs.length-1].focus();
 };
 $('#btn-annule-creation').onclick = ()=>{ rendreAccueil(); montrer('accueil'); };
-$('#btn-lancer').onclick = lancerPartie;
+$('#btn-lancer').onclick = ()=>lancerPartie();
 $('#btn-retour').onclick = ()=>{ partie=null; dernierCoup=null; rendreAccueil(); montrer('accueil'); };
 $('#btn-annuler').onclick = annulerDernier;
+$('#toast-annuler').onclick = annulerDernier;
 $('#btn-classement').onclick = ()=>{ rendreFin(); montrer('fin'); };
 $('#btn-revenir-feuille').onclick = ()=>{ rendrePartie(); montrer('partie'); };
 $('#btn-rejouer').onclick = ()=>{
-  brouillon = { variante:partie.variante, joueurs:[...partie.joueurs], bots:[...(partie.bots||[])], options:{...partie.options} };
-  lancerPartie();
+  const prec = partie;
+  brouillon = { variante:prec.variante, joueurs:[...prec.joueurs], bots:[...(prec.bots||[])], options:{...prec.options} };
+  /* à deux joueurs, le vainqueur de la partie terminée commence la suivante ;
+     en cas d'égalité, c'est l'autre joueur qui n'avait pas commencé */
+  let opts;
+  if(prec.joueurs.length===2 && casesRestantes(prec)===0){
+    const r = classement(prec);
+    if(r[0].total!==r[1].total){
+      opts = { premier:r[0].j, annonce:r[0].nom+' commence : vainqueur de la partie précédente' };
+    } else {
+      const autre = 1-(prec.premier||0);
+      opts = { premier:autre, annonce:'Égalité : '+prec.joueurs[autre]+' commence, l’autre a commencé la partie précédente' };
+    }
+  }
+  lancerPartie(opts);
 };
 $('#btn-supprimer').onclick = async ()=>{
   if(!confirm('Supprimer définitivement cette partie ?')) return;
