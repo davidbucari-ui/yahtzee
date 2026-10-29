@@ -53,6 +53,25 @@ header.appbar{
 }
 .btn-bar:hover{background:rgba(245,243,236,.12)}
 
+/* ---------- mode partie : bandeaux compacts pour voir toute la feuille ---------- */
+body.en-partie header.appbar{padding-top:calc(7px + env(safe-area-inset-top));padding-bottom:7px;gap:8px}
+body.en-partie .appbar .sous{display:none}
+body.en-partie .appbar h1{font-size:16px}
+body.en-partie .btn-bar{padding:5px 11px;font-size:12.5px}
+body.en-partie #ecran-partie .principal{padding-top:6px;padding-bottom:calc(8px + env(safe-area-inset-bottom))}
+body.en-partie #ecran-partie .btn{padding:10px 14px;font-size:15px}
+.appbar h1{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cat{white-space:nowrap;overflow:hidden}
+.cat .pips{transform:scale(var(--ps,1));transform-origin:center}
+@media (max-width:560px){
+  .cat{padding:0 6px;gap:6px}
+  .cat .val{display:none}
+  table.feuille .tete-joueur{min-width:48px;padding-left:2px;padding-right:2px}
+  table.feuille .tete-joueur .nom{max-width:64px}
+  tr.entete-bloc td{letter-spacing:.06em;white-space:nowrap;padding-left:7px}
+  main{padding-left:8px;padding-right:8px}
+}
+
 /* ---------- pips (signature) ---------- */
 .pips{
   display:grid;grid-template-columns:repeat(3,4px);grid-template-rows:repeat(3,4px);
@@ -63,6 +82,8 @@ header.appbar{
 
 /* ---------- écrans ---------- */
 main{max-width:1100px;margin:0 auto;padding:20px 16px 120px}
+body.en-partie main{padding-top:10px;padding-bottom:0}
+body.en-partie #note-partie{margin:6px 0 0;font-size:12px;line-height:1.3}
 .ecran{display:none}
 .ecran.actif{display:block}
 
@@ -146,7 +167,7 @@ table.feuille{border-collapse:collapse;width:100%;min-width:min-content}
 table.feuille th,table.feuille td{border-bottom:1px solid var(--trait);padding:0}
 .col-cat{
   position:sticky;left:0;z-index:5;background:var(--papier-clair);
-  min-width:170px;max-width:170px;
+  min-width:var(--wcat,170px);max-width:var(--wcat,170px);
   border-right:1px solid var(--trait);
 }
 thead .col-cat{z-index:12}
@@ -154,26 +175,26 @@ thead th{
   position:sticky;top:0;background:var(--papier-clair);z-index:10;
   border-bottom:1.5px solid var(--encre);
 }
-.tete-joueur{padding:10px 8px;min-width:88px;text-align:center}
+.tete-joueur{padding:var(--pad,10px) 6px;min-width:64px;text-align:center}
 .tete-joueur .nom{
-  font-family:var(--display);font-weight:800;font-size:17px;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:96px;margin:0 auto;
+  font-family:var(--display);font-weight:800;font-size:var(--f1,17px);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px;margin:0 auto;
 }
-.tete-joueur .cumul{font-family:var(--chiffres);font-size:19px;font-weight:500}
+.tete-joueur .cumul{font-family:var(--chiffres);font-size:var(--f2,19px);font-weight:500;line-height:1.1}
 .tete-joueur.leader .nom::after{content:" ★";color:var(--moutarde)}
 .tete-joueur.leader{background:#fff;box-shadow:inset 0 -3px 0 var(--moutarde)}
 
-.cat{display:flex;align-items:center;gap:9px;padding:0 11px;height:50px;font-size:16px;font-weight:600}
+.cat{display:flex;align-items:center;gap:9px;padding:0 11px;height:var(--h,50px);font-size:var(--f1,16px);font-weight:600}
 .cat .val{font-family:var(--chiffres);font-size:12.5px;font-weight:400;opacity:.5;margin-left:auto}
 tr.entete-bloc td{
   background:var(--encre);color:var(--papier-clair);
-  font-family:var(--chiffres);font-size:12px;letter-spacing:.16em;text-transform:uppercase;
-  padding:7px 11px;
+  font-family:var(--chiffres);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  padding:var(--padb,7px) 11px;line-height:1.1;
 }
 tr.entete-bloc .col-cat{background:var(--encre);color:var(--papier-clair)}
 
 .case{
-  width:100%;height:50px;font-family:var(--chiffres);font-size:21px;font-weight:500;
+  width:100%;height:var(--h,50px);font-family:var(--chiffres);font-size:var(--f2,21px);font-weight:500;
   display:grid;place-items:center;position:relative;
 }
 .case:hover{background:rgba(31,111,92,.09)}
@@ -217,14 +238,14 @@ tr.vedette .case.remplie{background:#fff;color:#8a6410}
 
 tr.total td,tr.total .col-cat{background:rgba(19,26,46,.05)}
 tr.total .cat{font-weight:600}
-tr.total .lecture{font-family:var(--chiffres);font-weight:500;text-align:center;font-size:19px}
+tr.total .lecture{font-family:var(--chiffres);font-weight:500;text-align:center;font-size:var(--f2,19px)}
 tr.grand-total td{background:var(--encre);color:var(--papier-clair)}
 tr.grand-total .col-cat{background:var(--encre);color:var(--papier-clair)}
-tr.grand-total .cat{font-family:var(--display);font-weight:800;font-size:18px}
-tr.grand-total .lecture{font-size:24px;font-weight:500;font-family:var(--chiffres);text-align:center}
+tr.grand-total .cat{font-family:var(--display);font-weight:800;font-size:var(--f1,18px)}
+tr.grand-total .lecture{font-size:var(--f4,24px);font-weight:500;font-family:var(--chiffres);text-align:center}
 tr.total-haut td,tr.total-haut .col-cat{background:rgba(31,111,92,.13)}
-tr.total-haut .cat{font-family:var(--display);font-weight:800;font-size:17px}
-tr.total-haut .lecture{font-family:var(--chiffres);font-weight:500;text-align:center;font-size:21px;color:var(--feutre-fonce)}
+tr.total-haut .cat{font-family:var(--display);font-weight:800;font-size:var(--f1,17px)}
+tr.total-haut .lecture{font-family:var(--chiffres);font-weight:500;text-align:center;font-size:var(--f2,21px);color:var(--feutre-fonce)}
 .bonus-atteint{color:var(--feutre);font-weight:600}
 
 /* ---------- pavé de saisie ---------- */
@@ -848,7 +869,9 @@ function montrer(nom){
   $('#btn-retour').classList.toggle('cache', nom!=='partie' && nom!=='fin');
   $('#btn-annuler').classList.toggle('cache', !enPartie || !dernierCoup);
   $('#btn-regles').classList.toggle('cache', nom!=='partie' && nom!=='creation');
+  document.body.classList.toggle('en-partie', enPartie);
   window.scrollTo(0,0);
+  if(enPartie) requestAnimationFrame(ajusterFeuille);
   if(nom==='partie') planifierBot(); else clearTimeout(minuteurBot);
 }
 
@@ -1417,9 +1440,37 @@ function rendrePartie(){
   }
   $('#note-partie').textContent = rappels.join(' ');
   $('#btn-annuler').classList.toggle('cache', !dernierCoup);
+  ajusterFeuille();
   $('#btn-classement').textContent = reste===0 ? 'Voir le classement' : 'Classement provisoire';
   planifierBot();
 }
+
+/* Calcule la hauteur de ligne pour que toute la feuille tienne à l'écran. */
+function ajusterFeuille(){
+  const ecran = $('#ecran-partie');
+  if(!ecran.classList.contains('actif') || !partie) return;
+  const env = document.querySelector('.feuille-enveloppe');
+  const lignes = [...$('#corps-feuille').rows];
+  const nBloc = lignes.filter(r=>r.classList.contains('entete-bloc')).length;
+  const nNormales = lignes.length - nBloc;
+  const unites = nNormales + nBloc*0.55 + 1.5;          // + en-tête des joueurs
+  const haut = env.getBoundingClientRect().top + window.scrollY;
+  const bas  = document.querySelector('#ecran-partie .principal').offsetHeight;
+  const note = $('#note-partie').offsetHeight + 8;
+  const dispo = window.innerHeight - haut - bas - note - 16;
+  const h = Math.max(21, Math.min(52, Math.floor(dispo/unites)));
+  const st = env.style;
+  st.setProperty('--h',  h+'px');
+  st.setProperty('--f1', Math.max(11, Math.min(17, Math.round(h*0.36)))+'px');
+  st.setProperty('--f2', Math.max(13, Math.min(22, Math.round(h*0.44)))+'px');
+  st.setProperty('--f4', Math.max(15, Math.min(25, Math.round(h*0.5)))+'px');
+  st.setProperty('--ps', Math.max(.55, Math.min(1, (h-4)/20)).toFixed(2));
+  st.setProperty('--pad', Math.max(3, Math.round(h*0.14))+'px');
+  st.setProperty('--padb', Math.max(2, Math.round(h*0.1))+'px');
+  st.setProperty('--wcat', (window.innerWidth<560 ? 112 : 160)+'px');
+}
+window.addEventListener('resize', ajusterFeuille);
+window.addEventListener('orientationchange', ()=>setTimeout(ajusterFeuille,200));
 
 /* =====================================================================
    9. PAVÉ DE SAISIE
