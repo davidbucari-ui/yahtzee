@@ -354,7 +354,7 @@ tr.total-haut .lecture{font-family:var(--chiffres);font-weight:500;text-align:ce
 .nav-j:hover{border-color:var(--feutre)}
 .puces-joueurs{
   display:flex;gap:8px;flex:1;overflow-x:auto;-webkit-overflow-scrolling:touch;
-  padding:2px;scrollbar-width:none;
+  padding:2px;scrollbar-width:none;justify-content:center;
 }
 .puces-joueurs::-webkit-scrollbar{display:none}
 .puce-j{
@@ -1587,7 +1587,8 @@ function rendrePartie(){
     prec.onclick = ()=>changerJoueur(-1);
     barre.appendChild(prec);
     const bande = el('div','puces-joueurs');
-    p.joueurs.forEach((nom,j)=>{
+    [jc].forEach(j=>{
+      const nom = p.joueurs[j];
       const fini = casesRestantesJoueur(p,j)===0;
       const b = el('button','puce-j'+(j===jc?' encours':'')+(j===avance?' meneur':'')+(fini&&j!==jc?' fini':''));
       b.setAttribute('aria-pressed', String(j===jc)); teinter(b,j);
