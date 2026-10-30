@@ -3,6 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0F766E">
 <title>Bloc de score — Yahtzee &amp; variantes</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -28,7 +32,7 @@ body{
   color:var(--encre);
   font-family:var(--corps);
   font-size:16px;line-height:1.45;
-  min-height:100vh;
+  min-height:100vh;min-height:100dvh;
   padding-bottom:env(safe-area-inset-bottom);
 }
 button{font-family:inherit;font-size:inherit;color:inherit;border:0;background:none;cursor:pointer}
@@ -644,6 +648,12 @@ thead th.tete-joueur,thead th.tete-joueur.leader{
 .podium li.premier{background:var(--pc,var(--encre));color:var(--pc-fg,var(--papier-clair));border-color:var(--pc,var(--encre))}
 .podium li.premier .pts{color:inherit}
 .podium li.premier .place{opacity:.85}
+
+/* plein écran */
+#btn-plein-ecran{margin-left:auto}
+.appbar #btn-plein-ecran ~ .btn-bar{margin-left:0}
+html:fullscreen,body:fullscreen{background:var(--papier)}
+header.appbar{padding-top:calc(7px + env(safe-area-inset-top))}
 </style>
 </head>
 <body>
@@ -653,6 +663,7 @@ thead th.tete-joueur,thead th.tete-joueur.leader{
   <h1 id="titre-appli">Bloc de score<span class="sous" id="sous-titre">Yahtzee et ses variantes</span></h1>
   <button class="btn-bar cache" id="btn-annuler" aria-label="Annuler le dernier score"><span aria-hidden="true">↶</span><span class="lib"> Annuler</span></button>
   <button class="btn-bar cache" id="btn-regles" aria-label="Règles du jeu"><span aria-hidden="true">?</span><span class="lib"> Règles</span></button>
+  <button class="btn-bar cache" id="btn-plein-ecran" aria-label="Plein écran"><span aria-hidden="true" id="ico-plein-ecran">⛶</span></button>
 </header>
 
 <main>
@@ -1976,6 +1987,29 @@ $('#btn-supprimer').onclick = async ()=>{
   partie=null; dernierCoup=null; rendreAccueil(); montrer('accueil');
 };
 $('#btn-regles').onclick = ouvrirRegles;
+
+/* ---------- plein écran ---------- */
+(function(){
+  const btn = $('#btn-plein-ecran'), ico = $('#ico-plein-ecran');
+  const racine = document.documentElement;
+  const peutPleinEcran = !!(racine.requestFullscreen || racine.webkitRequestFullscreen);
+  if(!peutPleinEcran) return; // iPhone : utiliser « Sur l'écran d'accueil »
+  btn.classList.remove('cache');
+  const actif = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
+  const maj = () => {
+    ico.textContent = actif() ? '✕' : '⛶';
+    btn.setAttribute('aria-label', actif() ? 'Quitter le plein écran' : 'Plein écran');
+  };
+  btn.onclick = () => {
+    try{
+      if(actif()) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+      else (racine.requestFullscreen || racine.webkitRequestFullscreen).call(racine);
+    }catch(e){}
+  };
+  document.addEventListener('fullscreenchange', maj);
+  document.addEventListener('webkitfullscreenchange', maj);
+  maj();
+})();
 $('#btn-ferme-regles').onclick = ()=>{
   if(retourDepuisRegles==='partie'){ rendrePartie(); montrer('partie'); }
   else { rendreCreation(); montrer('creation'); }
