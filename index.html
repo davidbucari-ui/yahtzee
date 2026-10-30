@@ -87,7 +87,7 @@ body.en-partie #ecran-partie .btn{padding:10px 14px;font-size:15px}
 /* ---------- écrans ---------- */
 main{max-width:1100px;margin:0 auto;padding:20px 16px 120px}
 body.en-partie main{padding-top:10px;padding-bottom:0}
-body.en-partie #note-partie{margin:6px 0 0;font-size:12px;line-height:1.3}
+body.en-partie #note-partie{margin:6px 0 0;font-size:14px;line-height:1.3}
 .ecran{display:none}
 .ecran.actif{display:block}
 
@@ -274,7 +274,7 @@ tr.total-haut .lecture{font-family:var(--chiffres);font-weight:500;text-align:ce
   -webkit-overflow-scrolling:touch;
 }
 .puce{
-  font-family:var(--chiffres);font-size:19px;font-weight:500;padding:14px 0;
+  font-family:var(--chiffres);font-size:23px;font-weight:500;padding:14px 0;
   border:1.5px solid var(--trait);border-radius:10px;background:#fff;
   text-align:center;
 }
@@ -363,7 +363,7 @@ tr.total-haut .lecture{font-family:var(--chiffres);font-weight:500;text-align:ce
   background:var(--papier-clair);white-space:nowrap;
 }
 .puce-j b{font-family:var(--display);font-weight:600;font-size:14px}
-.puce-j em{font-family:var(--chiffres);font-style:normal;font-size:13px;opacity:.6}
+.puce-j em{font-family:var(--chiffres);font-style:normal;font-size:17px;opacity:.6}
 .puce-j.encours{background:var(--feutre);border-color:var(--feutre);color:var(--papier-clair)}
 .puce-j.encours em{opacity:.85}
 .puce-j .tag{
@@ -448,7 +448,7 @@ tr.reste .lecture.ok{color:var(--feutre);font-weight:600}
    ===================================================================== */
 /* textes secondaires plus contrastés */
 .etiquette{opacity:.72;font-size:11.5px}
-.note{opacity:.75;font-size:13px}
+.note{opacity:.75;font-size:15px}
 
 /* toute la ligne est une cible tactile */
 tr.cliquable{cursor:pointer}
@@ -540,7 +540,7 @@ input[type=text]{font-weight:700;font-size:17px}
 .regle h3,.variante b,.partie b,.podium .j{font-weight:700}
 .case,tr.total .lecture,tr.grand-total .lecture,.tete-joueur .cumul,.puce,.podium .pts{font-weight:600}
 .tete-joueur .nom{font-weight:700}
-.puce-j b{font-weight:700;font-size:15px}
+.puce-j b{font-weight:700;font-size:20px}
 .puce-j em{opacity:.85;font-weight:600}
 .btn{font-weight:700}
 .note,.variante span,.partie span,.option small,.regle p{font-weight:600}
@@ -1723,13 +1723,13 @@ function ajusterFeuille(){
   const h = Math.max(21, Math.min(52, Math.floor(dispo/unites)));
   const st = env.style;
   st.setProperty('--h',  h+'px');
-  st.setProperty('--f1', Math.max(11, Math.min(17, Math.round(h*0.36)))+'px');
-  st.setProperty('--f2', Math.max(13, Math.min(22, Math.round(h*0.44)))+'px');
-  st.setProperty('--f4', Math.max(15, Math.min(25, Math.round(h*0.5)))+'px');
+  st.setProperty('--f1', Math.max(13, Math.min(21, Math.round(h*0.46)))+'px');
+  st.setProperty('--f2', Math.max(16, Math.min(27, Math.round(h*0.56)))+'px');
+  st.setProperty('--f4', Math.max(18, Math.min(30, Math.round(h*0.62)))+'px');
   st.setProperty('--ps', Math.max(.55, Math.min(1, (h-4)/20)).toFixed(2));
   st.setProperty('--pad', Math.max(3, Math.round(h*0.14))+'px');
   st.setProperty('--padb', Math.max(2, Math.round(h*0.1))+'px');
-  st.setProperty('--wcat', (window.innerWidth<560 ? 112 : 160)+'px');
+  st.setProperty('--wcat', (window.innerWidth<560 ? 136 : 180)+'px');
 }
 window.addEventListener('resize', ajusterFeuille);
 window.addEventListener('orientationchange', ()=>setTimeout(ajusterFeuille,200));
