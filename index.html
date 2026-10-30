@@ -654,6 +654,15 @@ thead th.tete-joueur,thead th.tete-joueur.leader{
 .appbar #btn-plein-ecran ~ .btn-bar{margin-left:0}
 html:fullscreen,body:fullscreen{background:var(--papier)}
 header.appbar{padding-top:calc(7px + env(safe-area-inset-top))}
+
+/* ---------- police en gras ---------- */
+body{font-weight:700}
+.cat,.cat .val,.case,.case .sugg,.tete-joueur .nom,.tete-joueur .cumul,
+tr.total .cat,tr.total .lecture,tr.grand-total .lecture,tr.total-haut .lecture,tr.reste .cat,tr.reste .lecture,
+.puce,.puce-j b,.puce-j em,.puce.calcule small,.podium .place,.podium .j,.podium .pts,
+.note,.chapo,.option,.option small,.regle p,.regle-val,.partie b,.partie span,.variante b,.variante span,
+.appbar .sous,.des-aide,.pave .qui,.pave .aide,.etiquette,.erreur{font-weight:700}
+.case.vide::after,.case.vide:not(.verrouillee)::after{font-weight:800}
 </style>
 </head>
 <body>
