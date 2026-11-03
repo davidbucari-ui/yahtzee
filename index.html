@@ -869,6 +869,48 @@ input[type=text]:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(53,201
 .retirer{color:#FF8A7A}
 .retirer:hover{background:rgba(255,138,122,.18)}
 .option input{accent-color:var(--bleu)}
+
+/* ---- teintes plus tendres : le orange vif laisse place à un doré pastel ---- */
+:root{
+  --orange:#E9B04A; --jaune:#F6D88A;
+  --haut:#F2C879; --haut-fonce:#8A5A12; --haut-clair:#FFF3DA; --haut-case:#FFF9EC; --haut-trait:#E9BE6B;
+}
+.appbar h1{color:#FFE9A8;text-shadow:0 2px 0 rgba(60,40,0,.4)}
+.titre-section{
+  background:linear-gradient(180deg,#FFF3CC 0%,#F7DB92 55%,#EDBC68 100%);
+  -webkit-background-clip:text;background-clip:text;
+  filter:drop-shadow(0 2px 0 rgba(90,60,10,.55)) drop-shadow(0 0 12px rgba(246,216,138,.25));
+}
+.btn.vert{
+  color:#4A3410;
+  background:linear-gradient(180deg,#FFEDB5 0%,#F3CC82 100%);
+  box-shadow:0 4px 0 #C49A4C,0 8px 18px rgba(243,204,130,.28);
+}
+.btn.vert:hover{background:linear-gradient(180deg,#FFF3CC 0%,#F7D595 100%)}
+tr.entete-bloc.entete-haut td,tr.entete-bloc.entete-haut .col-cat{
+  background:linear-gradient(180deg,#FBE6B0,#F2CB82);color:#5A3C0B;
+}
+tr.entete-bloc.entete-bas td,tr.entete-bloc.entete-bas .col-cat{
+  background:linear-gradient(180deg,#6DB6FF,#3A86E8);
+}
+.btn{background:linear-gradient(180deg,#5DB0FF 0%,#3A86E8 100%);box-shadow:0 4px 0 #2466BF,0 8px 18px rgba(58,134,232,.3)}
+.btn:hover{background:linear-gradient(180deg,#74BDFF 0%,#4A93F0 100%)}
+.btn.vert{box-shadow:0 4px 0 #C49A4C,0 8px 18px rgba(243,204,130,.28)}
+tr.vedette .col-cat{background:#FBEBC0}
+tr.vedette .cat{border-left-color:#E9BE6B}
+tr.vedette td:not(.col-cat){background:#FFF6DF}
+tr.vedette .case.remplie{color:#8A5A12}
+tr.total-haut td,tr.total-haut .col-cat{background:#F8E0AE}
+tr.total.reste td,tr.total.reste .col-cat{background:#FBEFCF}
+.variante{--vc:#E2A653}
+.variante:nth-child(3){--vc:#C9A24A}
+.de-jeu.garde{border-color:#E9B04A;background:linear-gradient(145deg,#FFF8E3,#FBE7B4);box-shadow:0 4px 0 #D2A24A,0 0 14px rgba(246,216,138,.5)}
+.de-jeu.garde::after{background:#E9B04A;color:#4A3410}
+.tete-joueur.leader .nom::after,.puce-j.meneur b::after{color:#E9B04A}
+.case.flash{animation:case-flash 2s ease-out both}
+@keyframes case-flash{0%{background:rgba(246,216,138,.85)}55%{background:rgba(246,216,138,.5)}100%{background:rgba(246,216,138,.15)}}
+.badge.finie{background:#FBEFCF;color:#7A5210}
+.toast-act{color:#F6D88A;border-color:rgba(246,216,138,.55)}
 </style>
 </head>
 <body>
@@ -1225,7 +1267,7 @@ const el = (tag,cls,txt)=>{const n=document.createElement(tag); if(cls)n.classNa
 const PIPS = {1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
 /* une couleur par joueur : onglet, en-tête de colonne, total, confirmation, classement */
 const PALETTE_JOUEURS = [
-  {bg:'#F77F00',fg:'#ffffff'}, {bg:'#1E7BFF',fg:'#ffffff'}, {bg:'#7C4DFF',fg:'#ffffff'},
+  {bg:'#E9A45A',fg:'#3A2508'}, {bg:'#1E7BFF',fg:'#ffffff'}, {bg:'#7C4DFF',fg:'#ffffff'},
   {bg:'#FFC72C',fg:'#2A1A00'}, {bg:'#00A896',fg:'#ffffff'}, {bg:'#E8407F',fg:'#ffffff'},
   {bg:'#8BD02F',fg:'#1a2e05'}, {bg:'#5B6B8C',fg:'#ffffff'}
 ];
