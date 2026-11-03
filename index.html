@@ -220,6 +220,9 @@ tr.vedette .case{background:rgba(232,179,60,.07)}
 tr.vedette .case.remplie{background:#fff;color:#8a6410}
 .case.zero{color:var(--biffe);background:rgba(194,69,45,.05)}
 
+.case.figee{cursor:default}
+.case.figee:hover{background:#fff}
+.case.figee.zero:hover{background:rgba(217,60,60,.1)}
 .case.verrouillee{cursor:default;opacity:.3}
 .case.verrouillee:hover{background:none}
 .case.verrouillee.vide::after{content:"×";font-size:15px}
@@ -1676,14 +1679,18 @@ function rendrePartie(){
     const td = el('td');
     const val = p.scores[j][l.id];
     const ouverte = caseOuverte(p,j,l);
+    /* une case déjà remplie n'est plus modifiable (sauf les compteurs : bonus Yahtzee, Yam's sec) ;
+       pour se corriger, il reste « Annuler » sur le dernier coup */
+    const figee = val!=null && !(l.type==='multiple' && l.face>6);
     /* proposition calculée à partir des dés lancés */
     const sugg = (val==null && ouverte && !p.desCaches && desLances(p)) ? scoreDe(p,l,etatDes(p).valeurs) : null;
     const b = el('button','case'+(val==null?(sugg==null?' vide':''):(val===0?' zero':' remplie'))+(ouverte?'':' verrouillee')+(fige && dernierCoup && dernierCoup.j===j && dernierCoup.id===l.id ? ' flash':''));
     b.textContent = val==null ? '' : String(val);
     if(val==null && sugg!=null) b.appendChild(el('span','sugg'+(sugg===0?' nul':''), String(sugg)));
-    b.disabled = !ouverte || botJoue || fige;
+    b.disabled = !ouverte || figee || botJoue || fige;
+    if(figee) b.classList.add('figee');
     b.setAttribute('aria-label', nom+' — '+l.label+' — '+(val==null?(ouverte?'vide':'verrouillée'):val+' points'));
-    if(ouverte && !botJoue && !fige){ r.classList.add('cliquable'); r.onclick = ()=>ouvrirPave(j,l); }
+    if(ouverte && !figee && !botJoue && !fige){ r.classList.add('cliquable'); r.onclick = ()=>ouvrirPave(j,l); }
     td.appendChild(b); r.appendChild(td);
     tb.appendChild(r);
   };
