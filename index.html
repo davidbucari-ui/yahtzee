@@ -1442,11 +1442,35 @@ function figerVue(j){
   minuteurBascule = setTimeout(finBascule, DELAI_BASCULE);
 }
 function annulerBascule(){ clearTimeout(minuteurBascule); minuteurBascule = null; vueFigee = null; }
+/* La page glisse : l'ancien joueur sort sur le côté, le suivant entre depuis l'autre. */
+let glisse = false;
+async function glisser(sens, maj){
+  const ecran = $('#ecran-partie');
+  const reduit = window.matchMedia && matchMedia('(prefers-reduced-motion:reduce)').matches;
+  if(reduit || !ecran.animate){ maj(); return; }
+  glisse = true;
+  const sauve = document.documentElement.style.overflowX;
+  document.documentElement.style.overflowX = 'hidden';
+  const d = Math.max(ecran.offsetWidth, 320) * (sens<0 ? -1 : 1);
+  try{
+    await ecran.animate(
+      [{transform:'translateX(0)',opacity:1},{transform:'translateX('+(-d)+'px)',opacity:.4}],
+      {duration:220,easing:'cubic-bezier(.4,0,.8,.6)',fill:'forwards'}).finished;
+    maj();
+    await ecran.animate(
+      [{transform:'translateX('+d+'px)',opacity:.4},{transform:'translateX(0)',opacity:1}],
+      {duration:260,easing:'cubic-bezier(.2,.8,.3,1)'}).finished;
+  }catch(e){ maj(); }
+  ecran.getAnimations().forEach(a=>a.cancel());
+  document.documentElement.style.overflowX = sauve;
+  glisse = false;
+}
 function finBascule(){
   minuteurBascule = null;
   if(vueFigee===null) return;
-  vueFigee = null;
-  if(partie && $('#ecran-partie').classList.contains('actif')){ rendrePartie(); planifierBot(); }
+  if(partie && $('#ecran-partie').classList.contains('actif')){
+    glisser(1, ()=>{ vueFigee = null; rendrePartie(); planifierBot(); });
+  } else vueFigee = null;
 }
 
 async function sauverDiscret(){ await Store.ecrire(parties); }
@@ -1795,11 +1819,11 @@ function ouvrirPave(j,l){
 function fermerPave(){ $('#voile').hidden = true; saisie=null; planifierBot(); }
 
 function changerJoueur(sens){
-  if(botJoue || vueFigee!==null) return;
+  if(botJoue || vueFigee!==null || glisse) return;
   partie.tour = joueurSuivant(partie, joueurCourant(partie), sens);
   reinitDes(partie); messageDes='';
   sauverDiscret();
-  rendrePartie();
+  glisser(sens, rendrePartie);
 }
 
 async function poser(j,l,valeur){
