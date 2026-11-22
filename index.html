@@ -961,6 +961,12 @@ tr.total.reste td,tr.total.reste .col-cat{background:#FBEFCF}
   <div class="etiquette" style="margin-top:22px">3 — Options</div>
   <div class="carte" id="liste-options"></div>
 
+  <div class="etiquette" style="margin-top:22px">4 — Parties par manche</div>
+  <div class="carte">
+    <div id="choix-manche" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+    <p class="note" id="note-manche" style="margin:10px 0 0"></p>
+  </div>
+
   <p class="erreur" id="erreur-creation"></p>
 
   <div class="principal"><div class="inner">
@@ -1255,7 +1261,7 @@ const Carnet = {
    ===================================================================== */
 let parties = [];
 let partie = null;          // partie ouverte
-let brouillon = { variante:'classique', joueurs:['',''], bots:[false,false], options:{} };
+let brouillon = { variante:'classique', joueurs:['',''], bots:[false,false], options:{}, manche:1 };
 let saisie = null;          // {joueur, ligneId}
 let dernierCoup = null;     // pour Annuler
 
@@ -1406,6 +1412,26 @@ function nomBotLibre(){
   return 'Robot '+k;
 }
 
+/* manche = série de parties : le premier à cibleManche(nb) victoires gagne */
+function cibleManche(nb){ return Math.floor(nb/2)+1; }
+function vainqueurPartie(p){
+  if(casesRestantes(p)!==0) return -1;
+  const r = classement(p);
+  return (r.length>1 && r[0].total===r[1].total) ? -1 : r[0].j;
+}
+/* victoires de chaque joueur dans la manche, partie en cours incluse si terminée */
+function victoiresManche(p){
+  const v = [...((p.manche&&p.manche.vict)||p.joueurs.map(()=>0))];
+  const w = vainqueurPartie(p);
+  if(w>=0) v[w]++;
+  return v;
+}
+function mancheGagnee(p){
+  if(!p.manche || p.manche.nb<2) return -1;
+  const v = victoiresManche(p), c = cibleManche(p.manche.nb);
+  return v.findIndex(x=>x>=c);
+}
+
 function rendreCreation(){
   /* on garde bots aligné sur joueurs */
   if(!Array.isArray(brouillon.bots)) brouillon.bots = [];
@@ -1497,12 +1523,23 @@ function rendreCreation(){
       lab.appendChild(c); lab.appendChild(t);
       boxO.appendChild(lab);
   });
+  const boxM = $('#choix-manche'); boxM.innerHTML='';
+  [1,3,5,7].forEach(n=>{
+    const b = el('button','bascule'+(brouillon.manche===n?' on':''), n===1?'1 partie':n+' parties');
+    b.setAttribute('aria-pressed', String(brouillon.manche===n));
+    b.onclick = ()=>{ brouillon.manche=n; rendreCreation(); };
+    boxM.appendChild(b);
+  });
+  $('#note-manche').textContent = brouillon.manche===1
+    ? 'Une seule partie : le meilleur score gagne.'
+    : 'Le gagnant est le premier à remporter '+cibleManche(brouillon.manche)+' parties sur '+brouillon.manche+'.';
   $('#erreur-creation').textContent='';
 }
 
 async function lancerPartie(opts){
   /* opts : { premier: index du joueur qui commence, annonce: texte } — ignoré si c'est un événement */
   opts = (opts && typeof opts.premier==='number') ? opts : {};
+  const mancheOpt = opts.manche || null;
   const premier = opts.premier || 0;
   const noms = brouillon.joueurs.map((n,i)=> n.trim() || 'Joueur '+(i+1));
   if(new Set(noms.map(n=>n.toLowerCase())).size !== noms.length){
@@ -1516,6 +1553,10 @@ async function lancerPartie(opts){
     tour:premier, premier,
     cree:Date.now(), maj:Date.now()
   };
+  const nbManche = brouillon.manche||1;
+  if(nbManche>1){
+    p.manche = mancheOpt || { id:id(), nb:nbManche, numero:1, vict:noms.map(()=>0) };
+  }
   const saisis = brouillon.joueurs.map(n=>n.trim()).filter((n,i)=>n && !brouillon.bots[i]);
   if(saisis.length || noms.length) await Carnet.retenir(noms, saisis, [...brouillon.bots]);
   parties.push(p); await Store.ecrire(parties);
@@ -2209,6 +2250,16 @@ function rendreFin(){
         ? 'Égalité en tête à '+rang[0].total+' points.'
         : rang[0].nom+' l’emporte avec '+rang[0].total+' points.')
     : 'Il reste '+casesRestantes(p)+' case(s) à remplir.';
+  const gm = mancheGagnee(p);
+  if(p.manche && p.manche.nb>1){
+    const v = victoiresManche(p), c = cibleManche(p.manche.nb);
+    const score = p.joueurs.map((n,j)=>n+' '+v[j]).join(' · ');
+    let txt = 'Manche en '+p.manche.nb+' parties (premier à '+c+') — partie '+p.manche.numero+'. '+score+'.';
+    if(gm>=0) txt = '🏆 '+p.joueurs[gm]+' remporte la manche ('+v[gm]+' parties sur '+p.manche.nb+'). '+score+'.';
+    $('#chapo-fin').textContent += ' '+txt;
+  }
+  $('#btn-rejouer').textContent = gm>=0 ? 'Nouvelle manche, mêmes joueurs'
+    : (p.manche && p.manche.nb>1 ? 'Partie suivante' : 'Rejouer avec les mêmes joueurs');
   const ul = $('#podium'); ul.innerHTML='';
   rang.forEach((r,i)=>{
     const li = teinter(el('li', i===0 && fini ? 'premier' : ''), r.j);
@@ -2252,7 +2303,7 @@ $('#btn-classement').onclick = ()=>{ rendreFin(); montrer('fin'); };
 $('#btn-revenir-feuille').onclick = ()=>{ rendrePartie(); montrer('partie'); };
 $('#btn-rejouer').onclick = ()=>{
   const prec = partie;
-  brouillon = { variante:prec.variante, joueurs:[...prec.joueurs], bots:[...(prec.bots||[])], options:{...prec.options} };
+  brouillon = { variante:prec.variante, joueurs:[...prec.joueurs], bots:[...(prec.bots||[])], options:{...prec.options}, manche:(prec.manche?prec.manche.nb:1) };
   /* à deux joueurs, le vainqueur de la partie terminée commence la suivante ;
      en cas d'égalité, c'est l'autre joueur qui n'avait pas commencé */
   let opts;
@@ -2264,6 +2315,11 @@ $('#btn-rejouer').onclick = ()=>{
       const autre = 1-(prec.premier||0);
       opts = { premier:autre, annonce:'Égalité : '+prec.joueurs[autre]+' commence, l’autre a commencé la partie précédente' };
     }
+  }
+  /* manche en cours : on enchaîne la partie suivante en reportant les victoires */
+  if(prec.manche && prec.manche.nb>1 && casesRestantes(prec)===0 && mancheGagnee(prec)<0){
+    opts = opts || { premier:prec.premier||0 };
+    opts.manche = { id:prec.manche.id, nb:prec.manche.nb, numero:prec.manche.numero+1, vict:victoiresManche(prec) };
   }
   lancerPartie(opts);
 };
